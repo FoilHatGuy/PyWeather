@@ -2,7 +2,6 @@ import http.client as hclient
 import re
 import xml.etree.ElementTree as ElementTree
 import sqlite3
-import os
 
 
 def get_weather_html(station, data_begin, data_end):
@@ -38,7 +37,7 @@ def fix_xml(xml_string):
 
 
 def create_db(station, statloc, table_body):
-    path = os.path.normpath(os.path.join(os.path.abspath(__file__), r'..\..\data\weather.db'))
+    path = r'..\data\weather.db'
     print(path)
     database = sqlite3.connect(path)
     cursor = database.cursor()
