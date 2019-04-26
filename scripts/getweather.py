@@ -1,5 +1,6 @@
 import http.client as hclient
 import re
+from pandas import DataFrame
 import xml.etree.ElementTree as ElementTree
 import sqlite3
 
@@ -37,18 +38,7 @@ def fix_xml(xml_string):
 
 
 def create_db(station, statloc, table_body):
-    path = r'..\data\weather.db'
-    print(path)
-    database = sqlite3.connect(path)
-    cursor = database.cursor()
-    cursor.execute("""CREATE TABLE testweather (statName TEXT, 
-                                                statLoc TEXT,
-                                                date TEXT,
-                                                tempMax INT,
-                                                tempMin INT,
-                                                press INT,
-                                                wind INT,
-                                                falls INT)""")
+    df = DataFrame(columns = ["statName", "date", "tempMax", "tempMin", "press", "wind", "falls"])
     for row in table_body:
         date = row[0].text
         temp_max = row[1].text
@@ -67,37 +57,29 @@ def create_db(station, statloc, table_body):
         if falls is None:
             falls = -200
 
-        statement = "INSERT INTO testweather VALUES ('"+station+"', '"+statloc+"', '" \
-                    + date + "', "+str(temp_max)+", " \
-                    + str(temp_min)+", "+str(press)+", " \
-                    + str(wind)+", "+str(falls)+")"
-        print(statement)
-        cursor.execute(statement)
+        l_row = {"statName": station, "date": date, "tempMax": str(temp_max), "tempMin": str(temp_min), "press": str(press), "wind": str(wind), "falls":str(falls)}
+        print(l_row)
+        df = df.append(l_row, ignore_index=True)
+    df.to_csv("../data/weather.csv", sep=";")
 
-    cursor.close()
-    database.commit()
-    database.close()
+
 
 weatherHtml = get_weather_html("276120", "01.01.2000", "31.12.2000")
 weatherHtml = fix_xml(weatherHtml)
-# file_in = open("../data/test.html", "r")
-# file_out = open("../data/test.html", "w", encoding="UTF-8-sig")
-
-# file_out.write(weatherHtml)
 
 html = ElementTree.fromstring(weatherHtml)
 
 main_div = html[1][2]
+print(html[1][2])
 table_body = main_div[5][1]
 station = main_div[1].text
 
 iter = main_div.itertext()
-i = 0
-while i < 100:
+for i in range(100):
     statloc = re.search("Географические координаты: .{0,13}", next(iter))
     if statloc is not None:
         statloc = statloc.group(0)[27:]
         break
-    i += 1
 
+    i += 1
 create_db(station, statloc, table_body)
