@@ -1,8 +1,8 @@
 import http.client as hclient
 import re
-from pandas import DataFrame
 import xml.etree.ElementTree as ElementTree
-import sqlite3
+from pandas import DataFrame
+import pandas as pd
 
 
 def get_weather_html(station, data_begin, data_end):
@@ -11,7 +11,7 @@ def get_weather_html(station, data_begin, data_end):
     con.request("POST", "/archive_gsod_res.php", "country=RU&station=" + station + "&datepicker_beg=" + data_begin +
                 "&datepicker_end=" + data_end, headers)
     response = con.getresponse()
-    #print(response.read())
+    # print(response.read())
     return response.read().decode("UTF-8")
 
 
@@ -37,8 +37,8 @@ def fix_xml(xml_string):
     return xml_string
 
 
-def create_db(station, statloc, table_body):
-    df = DataFrame(columns = ["statName", "date", "tempMax", "tempMin", "press", "wind", "falls"])
+def create_db(station, table_body):
+    df = DataFrame(columns=["statName", "date", "tempMax", "tempMin", "press", "wind", "falls"])
     for row in table_body:
         date = row[0].text
         temp_max = row[1].text
@@ -57,29 +57,42 @@ def create_db(station, statloc, table_body):
         if falls is None:
             falls = -200
 
-        l_row = {"statName": station, "date": date, "tempMax": str(temp_max), "tempMin": str(temp_min), "press": str(press), "wind": str(wind), "falls":str(falls)}
-        print(l_row)
+        l_row = {"statName": station, "date": date, "tempMax": str(temp_max), "tempMin": str(temp_min),
+                 "press": str(press), "wind": str(wind), "falls": str(falls)}
+        # print(l_row)
         df = df.append(l_row, ignore_index=True)
-    df.to_csv("../data/weather.csv", sep=";")
+    return df
+
+# !GOVNOCODE INCOMING!
 
 
+stations = list(x.split('  ') for x in
+"""325830  Петропавловск - Камчатский 
+ 319600  Владивосток 
+ 249590  Якутск 
+ 307100  Иркутск  
+ 295700  Красноярск 
+ 286980  Омск 
+ 287220  Уфа 
+ 349290  Краснодар 
+ 276120  Москва 
+ 260630  Санкт - Петербург 
+ 225500  Архангельск 
+ 221130  Мурманск 
+ 267020  Калининград """.split(' \n '))
 
-weatherHtml = get_weather_html("276120", "01.01.2000", "31.12.2000")
-weatherHtml = fix_xml(weatherHtml)
+df = DataFrame(columns=["statName", "date", "tempMax", "tempMin", "press", "wind", "falls"])
+for item in stations:
+    print(item[1])
+    weatherHtml = get_weather_html(item[0], "01.01.2000", "31.12.2000")
+    weatherHtml = fix_xml(weatherHtml)
 
-html = ElementTree.fromstring(weatherHtml)
+    html = ElementTree.fromstring(weatherHtml)
 
-main_div = html[1][2]
-print(html[1][2])
-table_body = main_div[5][1]
-station = main_div[1].text
-
-iter = main_div.itertext()
-for i in range(100):
-    statloc = re.search("Географические координаты: .{0,13}", next(iter))
-    if statloc is not None:
-        statloc = statloc.group(0)[27:]
-        break
-
-    i += 1
-create_db(station, statloc, table_body)
+    # main_div = html[1][2]
+    # print(html[1][2])
+    table_body = html[1][2][5][1]
+    # station = main_div[1].text
+    df = pd.concat([df, create_db(item[1], table_body)], ignore_index=True)
+print(df)
+df.to_csv("../data/weather.csv", sep=";")
