@@ -65,36 +65,28 @@ def create_db(station, table_body):
     return df
 
 
-# !GOVNOCODE INCOMING!
-
-
-stations = list(x.split('  ') for x in
-                """325830  Петропавловск - Камчатский 
-                 319600  Владивосток 
-                 249590  Якутск 
-                 307100  Иркутск  
-                 295700  Красноярск 
-                 286980  Омск 
-                 287220  Уфа 
-                 349290  Краснодар 
-                 276120  Москва 
-                 260630  Санкт - Петербург 
-                 225500  Архангельск 
-                 221130  Мурманск 
-                 267020  Калининград """.split(' \n '))
+stations = [['325830', 'Петропавловск - Камчатский'], ['319600', 'Владивосток'], ['249590', 'Якутск'],
+            ['307100', 'Иркутск'], ['295700', 'Красноярск'], ['286980', 'Омск'], ['287220', 'Уфа'],
+            ['349290', 'Краснодар'], ['276120', 'Москва'], ['260630', 'Санкт - Петербург'], ['225500', 'Архангельск'],
+            ['221130', 'Мурманск'], ['267020', 'Калининград ']]
 
 df = DataFrame(columns=["statName", "date", "tempMax", "tempMin", "press", "wind", "falls"])
-for item in stations:
+startdate = "01.01.2000"
+enddate = "31.12.2011"
+if int(enddate.split('.')[2]) - int(startdate.split('.')[2]) > 2:
+    years = list(
+        zip(["01.01." + str(x) for x in range(int(startdate.split('.')[2]), int(enddate.split('.')[2]), 2)],
+            ["31.12." + str(x) if x < int(enddate.split('.')[2]) else enddate for x in
+             range(int(startdate.split('.')[2]) + 2, int(enddate.split('.')[2]) + 2, 2)]))
+    print(years)
+else:
+    years = [[startdate, enddate]]
+for item in [stations[0]]:
     print(item[1])
-    weatherHtml = get_weather_html(item[0], "01.01.2000", "31.12.2000")
-    weatherHtml = fix_xml(weatherHtml)
+    for date in years:
+        html = ElementTree.fromstring(fix_xml(get_weather_html(item[0], date[0], date[1])))
 
-    html = ElementTree.fromstring(weatherHtml)
+        df = pd.concat([df, create_db(item[1], html[1][2][5][1])], ignore_index=True)
 
-    # main_div = html[1][2]
-    # print(html[1][2])
-    table_body = html[1][2][5][1]
-    # station = main_div[1].text
-    df = pd.concat([df, create_db(item[1], table_body)], ignore_index=True)
 print(df)
 df.to_csv("../data/weather.csv", sep=";")

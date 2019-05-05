@@ -1,6 +1,7 @@
 import tkinter as tk
 import tkinter.filedialog as fd
 import tkinter.ttk as ttk
+import tkinter.messagebox as msg
 
 import pandas as pd
 
@@ -9,10 +10,17 @@ class Data:
     def __init__(self):
         self.dataframe = pd.read_csv("../data/weather.csv", encoding="utf-8", sep=";")
         # self.getdata(self.dataframe)
+        self.cities = sorted(list(set(self.dataframe['statName'])))
+        self.mindate = min(set(self.dataframe['date']))
+        self.maxdate = max(set(self.dataframe['date']))
+        print(self.mindate, self.maxdate)
 
     def getdata(self, filters):
         if filters == 'all':
             return self.dataframe
+
+    def getcities(self):
+        return self.cities
 
 
 class Gui:
@@ -27,11 +35,19 @@ class Gui:
 
         top_left = ttk.Frame(top, relief='groove', borderwidth=5)
         top_left.grid(column=0, row=0)
+
         # upper toolbar with filters
         toolbar = ttk.Frame(top_left, relief='groove', borderwidth=5)
         toolbar.grid(row=0, column=0, columnspan=3)
-        button1 = ttk.Button(toolbar, text="Insert row", command=lambda: self.insert(self.df))
-        button1.grid(row=0, column=0, pady=8)
+
+        self.cityfilter = tk.StringVar(value=self.pointer.getcities()[0])
+        citychoice = ttk.Combobox(toolbar, textvariable=self.cityfilter, values=self.pointer.getcities(),
+                                  state='readonly', width=30)
+        citychoice.grid(row=0, column=0)
+        # citychoice.bind('<<ComboboxSelected>>', lambda x: )
+        # test = tk.Label(toolbar, textvariable=self.cityfilter, width=25)
+        # test.grid(row=0, column=1)
+
         # toolbar ends
 
         # table starts
