@@ -1,8 +1,9 @@
 import http.client as hclient
 import re
 import xml.etree.ElementTree as ElementTree
-from pandas import DataFrame
+
 import pandas as pd
+from pandas import DataFrame
 
 
 def get_weather_html(station, data_begin, data_end):
@@ -63,23 +64,24 @@ def create_db(station, table_body):
         df = df.append(l_row, ignore_index=True)
     return df
 
+
 # !GOVNOCODE INCOMING!
 
 
 stations = list(x.split('  ') for x in
-"""325830  Петропавловск - Камчатский 
- 319600  Владивосток 
- 249590  Якутск 
- 307100  Иркутск  
- 295700  Красноярск 
- 286980  Омск 
- 287220  Уфа 
- 349290  Краснодар 
- 276120  Москва 
- 260630  Санкт - Петербург 
- 225500  Архангельск 
- 221130  Мурманск 
- 267020  Калининград """.split(' \n '))
+                """325830  Петропавловск - Камчатский 
+                 319600  Владивосток 
+                 249590  Якутск 
+                 307100  Иркутск  
+                 295700  Красноярск 
+                 286980  Омск 
+                 287220  Уфа 
+                 349290  Краснодар 
+                 276120  Москва 
+                 260630  Санкт - Петербург 
+                 225500  Архангельск 
+                 221130  Мурманск 
+                 267020  Калининград """.split(' \n '))
 
 df = DataFrame(columns=["statName", "date", "tempMax", "tempMin", "press", "wind", "falls"])
 for item in stations:
