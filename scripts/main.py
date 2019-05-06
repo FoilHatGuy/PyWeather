@@ -1,7 +1,6 @@
 import tkinter as tk
 import tkinter.filedialog as fd
 import tkinter.ttk as ttk
-import tkinter.messagebox as msg
 
 import pandas as pd
 
@@ -15,6 +14,12 @@ class Data:
         self.maxdate = max(set(self.dataframe['date']))
         print(self.mindate, self.maxdate)
 
+    def open(self):
+        route = fd.askopenfile(initialdir="../data/", title="Select file to open", defaultextension='.csv',
+                               filetypes=(("csv files", "*.csv"), ("all files", "*.*")))
+        if route is not None:
+            self.dataframe = pd.read_csv(route, encoding="utf-8", sep=";")
+
     def getdata(self, filters):
         if filters == 'all':
             return self.dataframe
@@ -22,13 +27,44 @@ class Data:
     def getcities(self):
         return self.cities
 
+    def getdate(self):
+        return [self.mindate, self.maxdate]
+
+    def getdateint(self):
+        return [list(map(int, self.mindate.split('.'))), list(map(int, self.maxdate.split('.')))]
+
+    @staticmethod
+    def save(data):
+        route = fd.asksaveasfile(initialdir="../data/", title="Select file to save", defaultextension='.csv',
+                                 filetypes=(("csv files", "*.csv"), ("all files", "*.*")))
+        if route is not None:
+            data.to_csv(route, encoding="utf-8", sep=";")
+
 
 class Gui:
     def __init__(self, data):
         self.pointer = data
         self.df = self.askdata()
         root = tk.Tk()
+
         # root.resizable(False, False)
+
+        def daysupdatecounter(days, month, year):
+            nonlocal day
+            print(month.get())
+            if month.get() in [1, 3, 5, 7, 8, 10, 12]:
+                dayscount = 31
+            elif month.get() == 2:
+                if year.get() % 4 == 0:
+                    dayscount = 29
+                else:
+                    dayscount = 28
+            else:
+                dayscount = 20
+
+            day.config(values=list(range(1, dayscount + 1)))
+            if days.get() > dayscount:
+                days.set(dayscount)
 
         top = ttk.Frame(root, relief='groove', borderwidth=5)
         top.pack(anchor='n')
@@ -44,7 +80,35 @@ class Gui:
         citychoice = ttk.Combobox(toolbar, textvariable=self.cityfilter, values=self.pointer.getcities(),
                                   state='readonly', width=30)
         citychoice.grid(row=0, column=0)
-        # citychoice.bind('<<ComboboxSelected>>', lambda x: )
+
+        fromlabel = ttk.Label(toolbar, text='start date:')
+        fromlabel.grid(row=0, column=1)
+
+        dayfilter = tk.IntVar(value=self.pointer.getdateint()[0][0])
+        day = ttk.Combobox(toolbar, textvariable=dayfilter, state='readonly', width=3, values=list(range(1, 32)))
+        day.grid(row=0, column=2)
+
+        monthfilter = tk.IntVar(value=self.pointer.getdateint()[0][1])
+        yearfilter = tk.IntVar(value=self.pointer.getdateint()[0][2])
+        month = ttk.Combobox(toolbar, textvariable=monthfilter, values=list(range(1, 13)),
+                             state='readonly', width=3)
+        month.grid(row=0, column=3)
+        month.bind('<<ComboboxSelected>>', lambda x: daysupdatecounter(dayfilter, monthfilter, yearfilter))
+
+        year = ttk.Combobox(toolbar, textvariable=yearfilter, state='readonly', width=5,
+                            values=list(range(self.pointer.getdateint()[0][2], self.pointer.getdateint()[1][2] + 1)))
+        year.grid(row=0, column=4)
+
+        def updatestartfilter():
+            startdatefilter = str(dayfilter.get()) + '.' + str(monthfilter.get()) + '.' + str(yearfilter.get())
+            print(startdatefilter)
+
+        day.bind('<<ComboboxSelected>>', lambda x: updatestartfilter())
+        month.bind('<<ComboboxSelected>>', lambda x: daysupdatecounter(dayfilter, monthfilter, yearfilter),
+                   updatestartfilter())
+        year.bind('<<ComboboxSelected>>', lambda x: daysupdatecounter(dayfilter, monthfilter, yearfilter),
+                  updatestartfilter())
+
         # test = tk.Label(toolbar, textvariable=self.cityfilter, width=25)
         # test.grid(row=0, column=1)
 
@@ -109,19 +173,12 @@ class Gui:
         button2 = ttk.Button(bottom, text="De1lete row", command=lambda: self.delete(self.df))
         button2.grid(row=1, column=0, pady=8)
 
-        button2 = ttk.Button(bottom, text="Sa1ve to disk", command=lambda: self.save(self.df))
+        button2 = ttk.Button(bottom, text="Sa1ve to disk", command=lambda: self.pointer.save(self.df))
         button2.grid(row=2, column=0, pady=8)
         # /canvas
 
         root.update()
         root.mainloop()
-
-    @staticmethod
-    def save(data):
-        route = fd.asksaveasfile(initialdir="../data/", title="Select file", defaultextension='.csv',
-                                 filetypes=(("csv files", "*.csv"), ("all files", "*.*")))
-        if route is not None:
-            data.to_csv(route, encoding="utf-8", sep=";")
 
     def insert(self, data):
         pass

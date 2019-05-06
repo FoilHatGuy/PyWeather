@@ -81,7 +81,7 @@ if int(enddate.split('.')[2]) - int(startdate.split('.')[2]) > 2:
     print(years)
 else:
     years = [[startdate, enddate]]
-for item in [stations[0]]:
+for item in stations:
     print(item[1])
     for date in years:
         html = ElementTree.fromstring(fix_xml(get_weather_html(item[0], date[0], date[1])))
