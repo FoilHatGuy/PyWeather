@@ -1,7 +1,7 @@
 import http.client as hclient
 import re
 import xml.etree.ElementTree as ElementTree
-
+import datetime
 import pandas as pd
 from pandas import DataFrame
 
@@ -9,8 +9,8 @@ from pandas import DataFrame
 def get_weather_html(station, data_begin, data_end):
     con = hclient.HTTPConnection("pogoda-service.ru", port=80)
     headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-    con.request("POST", "/archive_gsod_res.php", "country=RU&station=" + station + "&datepicker_beg=" + data_begin +
-                "&datepicker_end=" + data_end, headers)
+    con.request("POST", "/archive_gsod_res.php", "country=RU&station=" + station + "&datepicker_beg=" + data_begin.strftime('%d.%m.%Y') +
+                "&datepicker_end=" + data_end.strftime('%d.%m.%Y'), headers)
     response = con.getresponse()
     # print(response.read())
     return response.read().decode("UTF-8")
@@ -39,6 +39,7 @@ def fix_xml(xml_string):
 
 
 def create_db(station, table_body):
+    columns = ["statName", "date", "tempMax", "tempMin", "press", "wind", "falls"]
     df = DataFrame(columns=["statName", "date", "tempMax", "tempMin", "press", "wind", "falls"])
     for row in table_body:
         date = row[0].text
@@ -71,22 +72,18 @@ stations = [['325830', 'Петропавловск - Камчатский'], ['3
             ['221130', 'Мурманск'], ['267020', 'Калининград ']]
 
 df = DataFrame(columns=["statName", "date", "tempMax", "tempMin", "press", "wind", "falls"])
-startdate = "01.01.2000"
-enddate = "31.12.2011"
-if int(enddate.split('.')[2]) - int(startdate.split('.')[2]) > 2:
-    years = list(
-        zip(["01.01." + str(x) for x in range(int(startdate.split('.')[2]), int(enddate.split('.')[2]), 2)],
-            ["31.12." + str(x) if x < int(enddate.split('.')[2]) else enddate for x in
-             range(int(startdate.split('.')[2]) + 2, int(enddate.split('.')[2]) + 2, 2)]))
-    print(years)
-else:
-    years = [[startdate, enddate]]
+startdate = datetime.date(2000, 1, 1)
+enddate = datetime.date(2011, 12, 31)
+delta = datetime.timedelta(days=1000)
 for item in stations:
     print(item[1])
-    for date in years:
-        html = ElementTree.fromstring(fix_xml(get_weather_html(item[0], date[0], date[1])))
-
+    date = startdate - delta
+    while enddate - date > delta:
+        date += delta
+        print('from:', date, 'to end:', enddate - date)
+        html = ElementTree.fromstring(fix_xml(get_weather_html(item[0], date, enddate)))
         df = pd.concat([df, create_db(item[1], html[1][2][5][1])], ignore_index=True)
 
+df['date'] = pd.to_datetime(df['date'], format='%d.%m.%Y')
 print(df)
 df.to_csv("../data/weather.csv", sep=";")

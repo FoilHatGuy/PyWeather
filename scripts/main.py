@@ -1,3 +1,4 @@
+import datetime as dt
 import tkinter as tk
 import tkinter.filedialog as fd
 import tkinter.ttk as ttk
@@ -8,11 +9,13 @@ import pandas as pd
 class Data:
     def __init__(self):
         self.dataframe = pd.read_csv("../data/weather.csv", encoding="utf-8", sep=";")
+        self.dataframe['date'] = pd.to_datetime(self.dataframe['date'])
+        # print(self.dataframe.dtypes)
         # self.getdata(self.dataframe)
         self.cities = sorted(list(set(self.dataframe['statName'])))
         self.mindate = min(set(self.dataframe['date']))
         self.maxdate = max(set(self.dataframe['date']))
-        print(self.mindate, self.maxdate)
+        # print(self.mindate, self.maxdate)
 
     def open(self):
         route = fd.askopenfile(initialdir="../data/", title="Select file to open", defaultextension='.csv',
@@ -21,17 +24,29 @@ class Data:
             self.dataframe = pd.read_csv(route, encoding="utf-8", sep=";")
 
     def getdata(self, filters):
-        if filters == 'all':
-            return self.dataframe
+        print(filters)
+        # city = '.*' if filters[0] == 'all' else filters[0]
+        # print(self.dataframe[self.dataframe['statName'].str.contains(city, regex=True)])
+        # print(self.dataframe['statName'].str.contains(str(city)))
+        # date = '\-'.join(map(lambda x: '.*' if x == 'all' else x, filters[:0:-1]))
+        # print(
+        #     (self.dataframe['statName'].str.contains(filters[0], regex=True) if filters[0] != 'all' else True) &
+        #     (self.dataframe['date'].dt.day == int(filters[1]) if filters[1] != 'all' else True) &
+        #     (self.dataframe['date'].dt.month == int(filters[2]) if filters[2] != 'all' else True) &
+        #     (self.dataframe['date'].dt.year == int(filters[3]) if filters[3] != 'all' else self.dataframe['date'].dt.year > 0))
+        return self.dataframe[
+            (self.dataframe['statName'].str.contains(filters[0], regex=True) if filters[0] != 'all' else True) &
+            (self.dataframe['date'].dt.day == int(filters[1]) if filters[1] != 'all' else True) &
+            (self.dataframe['date'].dt.month == int(filters[2]) if filters[2] != 'all' else True) &
+            (self.dataframe['date'].dt.year == int(filters[3]) if filters[3] != 'all' else self.dataframe[
+                                                                                               'date'].dt.year > 0)]
+        # return self.dataframe
 
     def getcities(self):
         return self.cities
 
     def getdate(self):
         return [self.mindate, self.maxdate]
-
-    def getdateint(self):
-        return [list(map(int, self.mindate.split('.'))), list(map(int, self.maxdate.split('.')))]
 
     @staticmethod
     def save(data):
@@ -44,26 +59,29 @@ class Data:
 class Gui:
     def __init__(self, data):
         self.pointer = data
-        self.df = self.askdata()
+        self.df = pd.DataFrame()
         root = tk.Tk()
 
-        # root.resizable(False, False)
+        root.resizable(False, False)
 
         def daysupdatecounter(days, month, year):
             nonlocal day
-            print(month.get())
-            if month.get() in [1, 3, 5, 7, 8, 10, 12]:
+            # print(days.get(), month.get(), year.get())
+            if month.get() == 'all':
                 dayscount = 31
-            elif month.get() == 2:
-                if year.get() % 4 == 0:
-                    dayscount = 29
+            elif year.get() == 'all':
+                if month.get() != 12:
+                    dayscount = (dt.date(4, int(month.get()) + 1, 1) - dt.timedelta(days=1)).day
                 else:
-                    dayscount = 28
+                    dayscount = (dt.date(4 + 1, 1, 1) - dt.timedelta(days=1)).day
             else:
-                dayscount = 20
+                if month.get() != 12:
+                    dayscount = (dt.date(int(year.get()), int(month.get()) + 1, 1) - dt.timedelta(days=1)).day
+                else:
+                    dayscount = (dt.date(int(year.get()) + 1, 1, 1) - dt.timedelta(days=1)).day
 
-            day.config(values=list(range(1, dayscount + 1)))
-            if days.get() > dayscount:
+            day.config(values=['all'] + list(range(1, dayscount + 1)))
+            if days.get() != 'all' and int(days.get()) > dayscount:
                 days.set(dayscount)
 
         top = ttk.Frame(root, relief='groove', borderwidth=5)
@@ -73,35 +91,46 @@ class Gui:
         top_left.grid(column=0, row=0)
 
         # upper toolbar with filters
-        toolbar = ttk.Frame(top_left, relief='groove', borderwidth=5)
+        toolbar = ttk.Frame(top_left, relief='flat', borderwidth=5)
         toolbar.grid(row=0, column=0, columnspan=3)
 
-        self.cityfilter = tk.StringVar(value=self.pointer.getcities()[0])
-        citychoice = ttk.Combobox(toolbar, textvariable=self.cityfilter, values=self.pointer.getcities(),
+        citylabel = ttk.Label(toolbar, text='city:', width=10, anchor="e")
+        citylabel.grid(row=0, column=0)
+
+        cityfilter = tk.StringVar(value='all')
+        citychoice = ttk.Combobox(toolbar, textvariable=cityfilter, values=['all'] + self.pointer.getcities(),
                                   state='readonly', width=30)
-        citychoice.grid(row=0, column=0)
+        citychoice.grid(row=0, column=1)
 
-        fromlabel = ttk.Label(toolbar, text='start date:')
-        fromlabel.grid(row=0, column=1)
+        datelabel = ttk.Label(toolbar, text='date:', width=10, anchor="e")
+        datelabel.grid(row=0, column=2, padx=5)
 
-        dayfilter = tk.IntVar(value=self.pointer.getdateint()[0][0])
-        day = ttk.Combobox(toolbar, textvariable=dayfilter, state='readonly', width=3, values=list(range(1, 32)))
-        day.grid(row=0, column=2)
+        dayfilter = tk.StringVar(value='all')
+        day = ttk.Combobox(toolbar, textvariable=dayfilter, state='readonly', width=3,
+                           values=['all'] + list(["%.2d" % i for i in range(1, 32)]))
+        day.grid(row=0, column=3)
 
-        monthfilter = tk.IntVar(value=self.pointer.getdateint()[0][1])
-        yearfilter = tk.IntVar(value=self.pointer.getdateint()[0][2])
-        month = ttk.Combobox(toolbar, textvariable=monthfilter, values=list(range(1, 13)),
+        monthfilter = tk.StringVar(value='all')
+        yearfilter = tk.StringVar(value='all')
+        month = ttk.Combobox(toolbar, textvariable=monthfilter,
+                             values=['all'] + list(["%.2d" % i for i in range(1, 13)]),
                              state='readonly', width=3)
-        month.grid(row=0, column=3)
+        month.grid(row=0, column=4)
         month.bind('<<ComboboxSelected>>', lambda x: daysupdatecounter(dayfilter, monthfilter, yearfilter))
 
-        year = ttk.Combobox(toolbar, textvariable=yearfilter, state='readonly', width=5,
-                            values=list(range(self.pointer.getdateint()[0][2], self.pointer.getdateint()[1][2] + 1)))
-        year.grid(row=0, column=4)
+        year = ttk.Combobox(toolbar, textvariable=yearfilter, state='readonly', width=5, values=['all'] + list(
+            range(self.pointer.getdate()[0].year, self.pointer.getdate()[1].year + 1)))
+        year.grid(row=0, column=5)
+
+        refresh = ttk.Button(toolbar, text='refresh', command=lambda: self.askdata(list(
+            map(lambda x: x.get(), [cityfilter, dayfilter, monthfilter, yearfilter]))))
+        refresh.grid(row=0, column=6, padx=30)
 
         def updatestartfilter():
-            startdatefilter = str(dayfilter.get()) + '.' + str(monthfilter.get()) + '.' + str(yearfilter.get())
-            print(startdatefilter)
+            pass
+            # if isinstance(yearfilter.get(), int) and isinstance(monthfilter.get(), int) and isinstance(dayfilter.get(), int):
+            #     datefilter = dt.date(int(yearfilter.get()), int(monthfilter.get()), int(dayfilter.get()))
+            # print(startdatefilter)
 
         day.bind('<<ComboboxSelected>>', lambda x: updatestartfilter())
         month.bind('<<ComboboxSelected>>', lambda x: daysupdatecounter(dayfilter, monthfilter, yearfilter),
@@ -118,7 +147,9 @@ class Gui:
         tableframe = ttk.Frame(top_left, relief='groove', borderwidth=5)
         tableframe.grid(row=1, column=0, columnspan=3)
 
-        self.table = ttk.Treeview(tableframe, columns=list(range(7)))
+        self.table = ttk.Treeview(tableframe,
+                                  columns=["ID", "statName", "date", "tempMax", "tempMin", "press", "wind", "falls"],
+                                  show='headings')
 
         scroll = ttk.Scrollbar(tableframe, orient="vertical", command=self.table.yview)
         self.table.configure(yscrollcommand=scroll.set)
@@ -126,29 +157,29 @@ class Gui:
         scroll.pack(side='right', fill='y')
         self.table.pack(side='left', fill='y')
 
-        self.table.column(column="#0", width=50)
-        self.table.heading(column="#0", text='ID')
+        self.table.column('ID', width=50)
+        self.table.heading('ID', text='ID')
 
-        self.table.column(column=0, width=190)
-        self.table.heading(column=0, text='city')
+        self.table.column('statName', width=180)
+        self.table.heading('statName', text='city')
 
-        self.table.column(column=1, width=80)
-        self.table.heading(column=1, text='date')
+        self.table.column('date', width=70)
+        self.table.heading('date', text='date')
 
-        self.table.column(column=2, width=60)
-        self.table.heading(column=2, text='tempMax')
+        self.table.column('tempMax', width=80)
+        self.table.heading('tempMax', text='Max temp')
 
-        self.table.column(column=3, width=60)
-        self.table.heading(column=3, text='tempMin')
+        self.table.column('tempMin', width=80)
+        self.table.heading('tempMin', text='Min temp')
 
-        self.table.column(column=4, width=80)
-        self.table.heading(column=4, text='pressure')
+        self.table.column('press', width=80)
+        self.table.heading('press', text='pressure')
 
-        self.table.column(column=5, width=50)
-        self.table.heading(column=5, text='wind')
+        self.table.column('wind', width=50)
+        self.table.heading('wind', text='wind')
 
-        self.table.column(column=6, width=50)
-        self.table.heading(column=6, text='falls')
+        self.table.column('falls', width=50)
+        self.table.heading('falls', text='falls')
         # table ends
 
         # right editor panel
@@ -162,7 +193,7 @@ class Gui:
         button2 = ttk.Button(editor, text="Save to disk", command=lambda: self.save(self.df))
         button2.grid(row=2, column=0, pady=8)
         # editor panel ends
-        self.view(self.df)
+        self.askdata(['all', 'all', 'all', 'all'])
 
         # canvas with graphs
         bottom = ttk.Frame(root, relief='groove', borderwidth=5, height=100, width=100)
@@ -186,16 +217,16 @@ class Gui:
     def delete(self, data):
         pass
 
-    def view(self, data):
-        for row in data.iterrows():
+    def askdata(self, filt):
+        self.df = self.pointer.getdata(filt)
+        self.table.delete(*self.table.get_children())
+        for row in self.df.iterrows():
+            # print(row)
             rowdata = row[1].tolist()
-            self.table.insert("", "end", text=rowdata[0], values=rowdata[1:])
+            # print(rowdata)
+            self.table.insert("", "end", values=rowdata[0:2] + [rowdata[2].strftime("%d.%m.%Y")] + rowdata[3:])
         # example of element:
-        print(list(data.iterrows())[0])
-
-    def askdata(self):
-        filters = 'all'
-        return self.pointer.getdata(filters)
+        # print(list(data.iterrows())[0])
 
 
 if __name__ == "__main__":
