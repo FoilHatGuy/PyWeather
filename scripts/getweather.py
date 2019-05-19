@@ -17,7 +17,8 @@ def get_weather_html(station, data_begin, data_end):
 
 
 def fix_xml(xml_string):
-    """ Исправляет закрытие тегов
+    """
+    Исправляет закрытие тегов
 
     Согласно стандарту XML любой тег либо должен быть закрыт
     либо должен быть самозакрывающимся. В HTML это не
@@ -86,4 +87,4 @@ for item in stations:
 
 df['date'] = pd.to_datetime(df['date'], format='%d.%m.%Y')
 print(df)
-df.to_csv("../data/weather.csv", sep=";")
+df.to_csv("../data/weather.csv", sep=";", index=False)

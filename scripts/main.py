@@ -2,6 +2,8 @@ import datetime as dt
 import tkinter as tk
 import tkinter.filedialog as fd
 import tkinter.ttk as ttk
+from scripts.editdialog import EditDialog
+
 
 import pandas as pd
 
@@ -22,6 +24,9 @@ class Data:
                                filetypes=(("csv files", "*.csv"), ("all files", "*.*")))
         if route is not None:
             self.dataframe = pd.read_csv(route, encoding="utf-8", sep=";")
+
+    def update_row(self, iid, values):
+        self.dataframe.iloc[iid] = values
 
     def getdata(self, filters):
         print(filters)
@@ -48,21 +53,19 @@ class Data:
     def getdate(self):
         return [self.mindate, self.maxdate]
 
-    @staticmethod
-    def save(data):
+    def save(self):
         route = fd.asksaveasfile(initialdir="../data/", title="Select file to save", defaultextension='.csv',
                                  filetypes=(("csv files", "*.csv"), ("all files", "*.*")))
         if route is not None:
-            data.to_csv(route, encoding="utf-8", sep=";")
+            self.dataframe.to_csv(route, encoding="utf-8", sep=";", index=False)
 
 
 class Gui:
     def __init__(self, data):
         self.pointer = data
-        self.df = pd.DataFrame()
-        root = tk.Tk()
-
-        root.resizable(False, False)
+        self.root = tk.Tk()
+        self.root.title("PyWeather")
+        self.root.resizable(False, False)
 
         def daysupdatecounter(days, month, year):
             nonlocal day
@@ -84,7 +87,7 @@ class Gui:
             if days.get() != 'all' and int(days.get()) > dayscount:
                 days.set(dayscount)
 
-        top = ttk.Frame(root, relief='groove', borderwidth=5)
+        top = ttk.Frame(self.root, relief='groove', borderwidth=5)
         top.pack(anchor='n')
 
         top_left = ttk.Frame(top, relief='groove', borderwidth=5)
@@ -148,8 +151,7 @@ class Gui:
         tableframe.grid(row=1, column=0, columnspan=3)
 
         self.table = ttk.Treeview(tableframe,
-                                  columns=["ID", "statName", "date", "tempMax", "tempMin", "press", "wind", "falls"],
-                                  show='headings')
+                                  columns=["statName", "date", "tempMax", "tempMin", "press", "wind", "falls"])
 
         scroll = ttk.Scrollbar(tableframe, orient="vertical", command=self.table.yview)
         self.table.configure(yscrollcommand=scroll.set)
@@ -157,8 +159,8 @@ class Gui:
         scroll.pack(side='right', fill='y')
         self.table.pack(side='left', fill='y')
 
-        self.table.column('ID', width=50)
-        self.table.heading('ID', text='ID')
+        self.table.column('#0', width=50)
+        self.table.heading('#0', text='ID')
 
         self.table.column('statName', width=180)
         self.table.heading('statName', text='city')
@@ -185,46 +187,74 @@ class Gui:
         # right editor panel
         editor = ttk.Frame(top, relief='groove', borderwidth=5)
         editor.grid(column=1, row=0, columnspan=3)
-        button1 = ttk.Button(editor, text="Insert row", command=lambda: self.insert(self.df))
-        button1.grid(row=0, column=0, pady=8)
-        button2 = ttk.Button(editor, text="Delete row", command=lambda: self.delete(self.df))
-        button2.grid(row=1, column=0, pady=8)
 
-        button2 = ttk.Button(editor, text="Save to disk", command=lambda: self.save(self.df))
-        button2.grid(row=2, column=0, pady=8)
+        insert_but = ttk.Button(editor, text="Insert row", command=self.insert)
+        insert_but.grid(row=0, column=0, pady=8)
+
+        edit_button = ttk.Button(editor, text="Edit row", command=self.editrow)
+        edit_button.grid(row=1, column=0, pady=8)
+
+        delete_but = ttk.Button(editor, text="Delete row", command=self.delete)
+        delete_but.grid(row=2, column=0, pady=8)
+
+        save_but = ttk.Button(editor, text="Save to disk", command=lambda: self.pointer.save())
+        save_but.grid(row=3, column=0, pady=8)
         # editor panel ends
         self.askdata(['all', 'all', 'all', 'all'])
 
         # canvas with graphs
-        bottom = ttk.Frame(root, relief='groove', borderwidth=5, height=100, width=100)
+        bottom = ttk.Frame(self.root, relief='groove', borderwidth=5, height=100, width=100)
         bottom.pack(anchor='s', fill='y')
 
-        button1 = ttk.Button(bottom, text="In1sert row", command=lambda: self.insert(self.df))
-        button1.grid(row=0, column=0, pady=8)
-        button2 = ttk.Button(bottom, text="De1lete row", command=lambda: self.delete(self.df))
-        button2.grid(row=1, column=0, pady=8)
-
-        button2 = ttk.Button(bottom, text="Sa1ve to disk", command=lambda: self.pointer.save(self.df))
-        button2.grid(row=2, column=0, pady=8)
+        but1 = tk.Button(bottom, text="This is not a button")
+        but1.grid(row=0, column=0, pady=8)
+        but2 = tk.Button(bottom, text="This one too")
+        but2.grid(row=1, column=0, pady=8)
+        but3 = tk.Button(bottom, text="Don't press me")
+        but3.grid(row=2, column=0, pady=8)
         # /canvas
 
-        root.update()
-        root.mainloop()
+        self.root.update()
+        self.root.mainloop()
 
     def insert(self, data):
         pass
+
+    def editrow(self):
+        if self.table.focus()!='':
+            curr_item = self.table.focus()
+            print(type(curr_item))
+            curr_item_info = self.table.item(self.table.focus())
+            edialog = EditDialog(self.root, [curr_item]+curr_item_info['values'])
+            if edialog.exit_code == 1:
+                new_values = edialog.get_values()
+
+                # <editor-fold desc="Table">
+                index = self.table.index(curr_item)
+                self.table.delete(curr_item)
+                self.table.insert("", index, iid=curr_item, text=curr_item, values=new_values)
+                # </editor-fold>
+
+                # <editor-fold desc="DataFrame">
+                new_values[1] = dt.datetime.strptime(new_values[1], "%d.%m.%Y")
+                self.pointer.update_row(int(curr_item), new_values)
+                # </editor-fold>
+
+                pass
 
     def delete(self, data):
         pass
 
     def askdata(self, filt):
-        self.df = self.pointer.getdata(filt)
+        df = self.pointer.getdata(filt)
+        # print(df)
         self.table.delete(*self.table.get_children())
-        for row in self.df.iterrows():
+        id = 5
+        for row in df.iterrows():
             # print(row)
             rowdata = row[1].tolist()
-            # print(rowdata)
-            self.table.insert("", "end", values=rowdata[0:2] + [rowdata[2].strftime("%d.%m.%Y")] + rowdata[3:])
+            self.table.insert("", "end", iid=row[0], text=row[0], values=rowdata[0:1] + [rowdata[1].strftime("%d.%m.%Y")] + rowdata[2:])
+            id+=1
         # example of element:
         # print(list(data.iterrows())[0])
 
