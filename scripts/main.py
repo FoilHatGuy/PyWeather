@@ -17,23 +17,8 @@ class Data:
         self.maxdate = max(set(self.dataframe['date']))
         # print(self.mindate, self.maxdate)
 
-    def open(self):
-        route = fd.askopenfile(initialdir="../data/", title="Select file to open", defaultextension='.csv',
-                               filetypes=(("csv files", "*.csv"), ("all files", "*.*")))
-        if route is not None:
-            self.dataframe = pd.read_csv(route, encoding="utf-8", sep=";")
-
     def getdata(self, filters):
         print(filters)
-        # city = '.*' if filters[0] == 'all' else filters[0]
-        # print(self.dataframe[self.dataframe['statName'].str.contains(city, regex=True)])
-        # print(self.dataframe['statName'].str.contains(str(city)))
-        # date = '\-'.join(map(lambda x: '.*' if x == 'all' else x, filters[:0:-1]))
-        # print(
-        #     (self.dataframe['statName'].str.contains(filters[0], regex=True) if filters[0] != 'all' else True) &
-        #     (self.dataframe['date'].dt.day == int(filters[1]) if filters[1] != 'all' else True) &
-        #     (self.dataframe['date'].dt.month == int(filters[2]) if filters[2] != 'all' else True) &
-        #     (self.dataframe['date'].dt.year == int(filters[3]) if filters[3] != 'all' else self.dataframe['date'].dt.year > 0))
         return self.dataframe[
             (self.dataframe['statName'].str.contains(filters[0], regex=True) if filters[0] != 'all' else True) &
             (self.dataframe['date'].dt.day == int(filters[1]) if filters[1] != 'all' else True) &
@@ -48,12 +33,17 @@ class Data:
     def getdate(self):
         return [self.mindate, self.maxdate]
 
-    @staticmethod
-    def save(data):
+    def save(self):
         route = fd.asksaveasfile(initialdir="../data/", title="Select file to save", defaultextension='.csv',
                                  filetypes=(("csv files", "*.csv"), ("all files", "*.*")))
         if route is not None:
-            data.to_csv(route, encoding="utf-8", sep=";")
+            self.dataframe.to_csv(route, encoding="utf-8", sep=";", index=False)
+
+    def open(self):
+        route = fd.askopenfile(initialdir="../data/", title="Select file to open", defaultextension='.csv',
+                               filetypes=(("csv files", "*.csv"), ("all files", "*.*")))
+        if route is not None:
+            self.dataframe = pd.read_csv(route, encoding="utf-8", sep=";")
 
 
 class Gui:
@@ -187,10 +177,10 @@ class Gui:
         editor.grid(column=1, row=0, columnspan=3)
         button1 = ttk.Button(editor, text="Insert row", command=lambda: self.insert(self.df))
         button1.grid(row=0, column=0, pady=8)
-        button2 = ttk.Button(editor, text="Delete row", command=lambda: self.delete(self.df))
+        button2 = ttk.Button(editor, text="open file", command=lambda: self.pointer.open())
         button2.grid(row=1, column=0, pady=8)
 
-        button2 = ttk.Button(editor, text="Save to disk", command=lambda: self.save(self.df))
+        button2 = ttk.Button(editor, text="Save to disk", command=lambda: self.pointer.save())
         button2.grid(row=2, column=0, pady=8)
         # editor panel ends
         self.askdata(['all', 'all', 'all', 'all'])
