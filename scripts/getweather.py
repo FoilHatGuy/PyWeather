@@ -1,5 +1,6 @@
 import http.client as hclient
 import re
+import os
 import xml.etree.ElementTree as ElementTree
 import datetime
 import pandas as pd
@@ -17,7 +18,8 @@ def get_weather_html(station, data_begin, data_end):
 
 
 def fix_xml(xml_string):
-    """ Исправляет закрытие тегов
+    """
+    Исправляет закрытие тегов
 
     Согласно стандарту XML любой тег либо должен быть закрыт
     либо должен быть самозакрывающимся. В HTML это не
@@ -38,31 +40,38 @@ def fix_xml(xml_string):
     return xml_string
 
 
-def create_db(station, table_body):
-    columns = ["statName", "date", "tempMax", "tempMin", "press", "wind", "falls"]
-    df = DataFrame(columns=["statName", "date", "tempMax", "tempMin", "press", "wind", "falls"])
-    for row in table_body:
-        date = row[0].text
-        temp_max = row[1].text
-        if temp_max is None:
-            temp_max = -200
-        temp_min = row[2].text
-        if temp_min is None:
-            temp_min = -200
-        press = row[4].text
-        if press is None:
-            press = -200
-        wind = row[5].text
-        if wind is None:
-            wind = -200
-        falls = row[6].text
-        if falls is None:
-            falls = -200
+def create_db(table_body):
+    columns = ["date", "tempMax", "tempMin", "press", "wind", "falls"]
+    df = DataFrame(columns=["date", "tempMax", "tempMin", "press", "wind", "falls"])
+    # print(str(table_body))
+    # # for row in table_body:
+    # #     date = row[0].text
+    #     temp_max = row[1].text
+    #     if temp_max is None:
+    #         temp_max = -200
+    #     temp_min = row[2].text
+    #     if temp_min is None:
+    #         temp_min = -200
+    #     press = row[4].text
+    #     if press is None:
+    #         press = -200
+    #     wind = row[5].text
+    #     if wind is None:
+    #         wind = -200
+    #     falls = row[6].text
+    #     if falls is None:
+    #         falls = -200
+    #     l_row = {"date": date, "tempMax": str(temp_max), "tempMin": str(temp_min),
+    #              "press": str(press), "wind": str(wind), "falls": str(falls)}
+    #
+    #     df = df.append(l_row, ignore_index=True)
+    # print(list(table_body))
+    # print(list(map(lambda x: dict(zip(columns, list(map(lambda y: -200 if y.text is None else y.text, list(x))))), table_body)))
+    df = df.append(list(map(lambda x: dict(zip(columns, list(map(lambda y: -200 if y.text is None else y.text, list(x))))), table_body)), ignore_index=True)
+    # l_row = {"date": row[0].text, "tempMax": str(row[1].text), "tempMin": str(row[2].text),
+    #          "press": str(row[4].text), "wind": str(row[5].text), "falls": str(row[6].text)}
 
-        l_row = {"statName": station, "date": date, "tempMax": str(temp_max), "tempMin": str(temp_min),
-                 "press": str(press), "wind": str(wind), "falls": str(falls)}
-        # print(l_row)
-        df = df.append(l_row, ignore_index=True)
+    # print(l_row)
     return df
 
 
@@ -71,19 +80,22 @@ stations = [['325830', 'Петропавловск - Камчатский'], ['3
             ['349290', 'Краснодар'], ['276120', 'Москва'], ['260630', 'Санкт - Петербург'], ['225500', 'Архангельск'],
             ['221130', 'Мурманск'], ['267020', 'Калининград ']]
 
-df = DataFrame(columns=["statName", "date", "tempMax", "tempMin", "press", "wind", "falls"])
+
+if not os.path.isdir('../data/origin'):
+    os.mkdir('../data/origin')
 startdate = datetime.date(2000, 1, 1)
-enddate = datetime.date(2011, 12, 31)
+enddate = datetime.date(2000, 1, 5)
 delta = datetime.timedelta(days=1000)
 for item in stations:
+    df = DataFrame(columns=["date", "tempMax", "tempMin", "press", "wind", "falls"])
     print(item[1])
     date = startdate - delta
     while enddate - date > delta:
         date += delta
         print('from:', date, 'to end:', enddate - date)
         html = ElementTree.fromstring(fix_xml(get_weather_html(item[0], date, enddate)))
-        df = pd.concat([df, create_db(item[1], html[1][2][5][1])], ignore_index=True)
-
-df['date'] = pd.to_datetime(df['date'], format='%d.%m.%Y')
-print(df)
-df.to_csv("../data/weather.csv", sep=";")
+        df = pd.concat([df, create_db(html[1][2][5][1])], ignore_index=True)
+    # print(df['date'])
+    # df['date'] = pd.to_datetime(df['date'], format='%d.%m.%Y')
+    print(df)
+    df.to_csv('../data/origin/'+''.join(item[1].split())+'.csv', sep=";", index=False, encoding='utf-8')
