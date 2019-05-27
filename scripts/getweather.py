@@ -1,8 +1,9 @@
-import http.client as hclient
-import re
-import os
-import xml.etree.ElementTree as ElementTree
 import datetime
+import http.client as hclient
+import os
+import re
+import xml.etree.ElementTree as ElementTree
+
 import pandas as pd
 from pandas import DataFrame
 
@@ -10,7 +11,8 @@ from pandas import DataFrame
 def get_weather_html(station, data_begin, data_end):
     con = hclient.HTTPConnection("pogoda-service.ru", port=80)
     headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-    con.request("POST", "/archive_gsod_res.php", "country=RU&station=" + station + "&datepicker_beg=" + data_begin.strftime('%d.%m.%Y') +
+    con.request("POST", "/archive_gsod_res.php",
+                "country=RU&station=" + station + "&datepicker_beg=" + data_begin.strftime('%d.%m.%Y') +
                 "&datepicker_end=" + data_end.strftime('%d.%m.%Y'), headers)
     response = con.getresponse()
     # print(response.read())
@@ -42,7 +44,7 @@ def fix_xml(xml_string):
 
 def create_db(table_body):
     columns = ["date", "tempMax", "tempMin", "press", "wind", "falls"]
-    df = DataFrame(columns=["date", "tempMax", "tempMin", "press", "wind", "falls"])
+    df = DataFrame(columns=columns)
     # print(str(table_body))
     # # for row in table_body:
     # #     date = row[0].text
@@ -67,7 +69,9 @@ def create_db(table_body):
     #     df = df.append(l_row, ignore_index=True)
     # print(list(table_body))
     # print(list(map(lambda x: dict(zip(columns, list(map(lambda y: -200 if y.text is None else y.text, list(x))))), table_body)))
-    df = df.append(list(map(lambda x: dict(zip(columns, list(map(lambda y: -200 if y.text is None else y.text, list(x))))), table_body)), ignore_index=True)
+    df = df.append(list(
+        map(lambda x: dict(zip(columns, list(map(lambda y: -200 if y.text is None else y.text, list(x))))),
+            table_body)), ignore_index=True)
     # l_row = {"date": row[0].text, "tempMax": str(row[1].text), "tempMin": str(row[2].text),
     #          "press": str(row[4].text), "wind": str(row[5].text), "falls": str(row[6].text)}
 
@@ -79,7 +83,6 @@ stations = [['325830', 'Петропавловск - Камчатский'], ['3
             ['307100', 'Иркутск'], ['295700', 'Красноярск'], ['286980', 'Омск'], ['287220', 'Уфа'],
             ['349290', 'Краснодар'], ['276120', 'Москва'], ['260630', 'Санкт - Петербург'], ['225500', 'Архангельск'],
             ['221130', 'Мурманск'], ['267020', 'Калининград ']]
-
 
 if not os.path.isdir('../data/origin'):
     os.mkdir('../data/origin')
@@ -94,8 +97,8 @@ for item in stations:
         date += delta
         print('from:', date, 'to end:', enddate - date)
         html = ElementTree.fromstring(fix_xml(get_weather_html(item[0], date, enddate)))
-        df = pd.concat([df, create_db(html[1][2][5][1])], ignore_index=True)
+        df = pd.concat([df, create_db(html[1][2][5][1])], ignore_index=True, sort=False)
     # print(df['date'])
-    # df['date'] = pd.to_datetime(df['date'], format='%d.%m.%Y')
+    df['date'] = pd.to_datetime(df['date'], format='%d.%m.%Y')
     print(df)
-    df.to_csv('../data/origin/'+''.join(item[1].split())+'.csv', sep=";", index=False, encoding='utf-8')
+    df.to_csv('../data/origin/' + ''.join(item[1].split()) + '.csv', sep=";", index=False, encoding='utf-8')
