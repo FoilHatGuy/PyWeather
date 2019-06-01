@@ -1,10 +1,10 @@
 import datetime as dt
+import os
+import re
 import tkinter as tk
 import tkinter.filedialog as fd
 import tkinter.ttk as ttk
-import os
-import re
-import matplotlib.pyplot as pl
+
 import pandas as pd
 
 from scripts.editdialog import EditDialog
@@ -12,41 +12,40 @@ from scripts.editdialog import EditDialog
 
 class Data:
     def __init__(self):
-        files = [f for f in os.listdir('../data/origin') if os.path.isfile('../data/origin/' + f) and re.match(r'.*\.csv', f)]
-        self.dataframe = {}
-        for file in files:
-            self.dataframe.update({re.sub(r'\.csv', '', file): pd.read_csv("../data/origin/"+file, encoding="utf-8", sep=";")})
-        pd.to_datetime(self.dataframe['date'], format='%d.%m.%Y')
-        # print(self.dataframe.dtypes)
-        # self.getdata(self.dataframe)
-        # self.cities = sorted(list(set(self.dataframe['statName'])))
-        self.cities = ['Архангельск']
-        self.mindate = min(set(self.dataframe['date']))
-        self.maxdate = max(set(self.dataframe['date']))
-        # print(self.mindate, self.maxdate)
+        self.cityindex = pd.read_csv("../data/index.csv", encoding="utf-8", sep=";", index_col='city')
+        self.mindate = dt.date(3000, 1, 1)
+        self.maxdate = dt.date(1000, 1, 1)
+        dataframe = pd.DataFrame(columns=["date", "tempMax", "tempMin", "press", "wind", "falls"])
+        # print(self.cityindex)
+        for idc, city in self.cityindex.iterrows():
+            print(idc, city)
+            filename = re.sub(r'\.csv', '', idc)
+            pd.read_csv("../data/" + idc, encoding="utf-8", sep=";", index_col='date')
+            dataframe[filename].index = pd.to_datetime(dataframe[filename].index, format='%Y-%m-%d')
+
+            self.mindate = self.mindate if min(set(dataframe.index)) < self.mindate else min(set(dataframe.index))
+            self.maxdate = self.mindate if max(set(dataframe.index)) < self.mindate else max(set(dataframe.index))
 
     def getdata(self, filters):
         print(filters)
-        return self.dataframe[
-            (self.dataframe['statName'].str.contains(filters[0], regex=True) if filters[0] != 'Все' else True) &
-            (self.dataframe['date'].dt.day == int(filters[1]) if filters[1] != 'Все' else True) &
-            (self.dataframe['date'].dt.month == int(filters[2]) if filters[2] != 'Все' else True) &
-            (self.dataframe['date'].dt.year == int(filters[3]) if filters[3] != 'Все' else self.dataframe[
-                                                                                               'date'].dt.year > 0)]
-        # return self.dataframe
+        dictdf = {filters[0]: self.dataframe[filters[0]]} if filters[0] != 'Все' else self.dataframe
+        for x in dictdf.keys():
+            dictdf[x] = dictdf[x][(dictdf[x].index.day == int(filters[1]) if filters[1] != 'Все' else True) &
+                                  (dictdf[x].index.month == int(filters[2]) if filters[2] != 'Все' else True) &
+                                  (dictdf[x].index.year == int(filters[3]) if filters[3] != 'Все' else dictdf[x].index.year > 0)]
+        return dictdf
 
     def getcities(self):
-        return self.cities
+        return self.cityindex['city'].to_list()
 
     def getdate(self):
         return [self.mindate, self.maxdate]
 
     def save(self):
-        route = fd.asksaveasfilename(initialdir="../data/", title="Select file to save", defaultextension='.csv',
-                                     filetypes=(("csv files", "*.csv"), ("all files", "*.*")))
-        print(self.dataframe)
+        route = fd.askdirectory(initialdir="../data/", title="Select file to save", defaultextension='.csv',
+                                filetypes=(("csv files", "*.csv"), ("all files", "*.*")))
+        # print(self.dataframe)
         if route is not None:
-            print('fghjk')
             self.dataframe.to_csv(route, encoding="utf-8", sep=";", index=False)
 
     # <<<<<<< HEAD
@@ -212,7 +211,7 @@ class Gui:
         save_butt.grid(row=3, column=0, pady=8)
         # >>>>>>> a945df43bd1acf5d7e229d8915c95378b3e0bcf2
         # editor panel ends
-        self.askdata(['Все', '01', '01', '2007'])
+        self.askdata(['Архангельск', '01', '01', '2000'])
 
         # canvas with graphs
         bottom = ttk.Frame(self.root, relief=self.view, borderwidth=5, height=100, width=100)
@@ -255,7 +254,6 @@ class Gui:
                 self.pointer.update_row(int(curr_item), new_values)
                 # </editor-fold>
 
-
     def delete(self, data):
         pass
 
@@ -263,15 +261,16 @@ class Gui:
         df = self.pointer.getdata(filt)
         # print(df)
         self.table.delete(*self.table.get_children())
-        id = 5
-        for row in df.iterrows():
-            # print(row)
-            rowdata = row[1].tolist()
-            self.table.insert("", "end", iid=row[0], text=row[0],
-                              values=rowdata[0:1] + [rowdata[1].strftime("%d.%m.%Y")] + rowdata[2:])
-            id += 1
+        for city in df.keys():
+            print(df[city])
+            for row in df[city].iterrows():
+                # print(row)
+                rowdata = row[1].tolist()
+                print(row[0], "AAA", row[1].tolist())
+                self.table.insert("", "end", iid=row[0].strftime("%d.%m.%Y"), text=row[0].strftime("%d.%m.%Y"),
+                                  values=[city, row[0].strftime("%d.%m.%Y")] + rowdata)
         # example of element:
-        print(list(df.iterrows())[0])
+        # print(list(df.iterrows())[0])
 
 
 if __name__ == "__main__":

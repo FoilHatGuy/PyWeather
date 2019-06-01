@@ -82,14 +82,26 @@ def create_db(table_body):
 stations = [['325830', 'Петропавловск - Камчатский'], ['319600', 'Владивосток'], ['249590', 'Якутск'],
             ['307100', 'Иркутск'], ['295700', 'Красноярск'], ['286980', 'Омск'], ['287220', 'Уфа'],
             ['349290', 'Краснодар'], ['276120', 'Москва'], ['260630', 'Санкт - Петербург'], ['225500', 'Архангельск'],
-            ['221130', 'Мурманск'], ['267020', 'Калининград ']]
+            ['221130', 'Мурманск'], ['267020', 'Калининград']]
 
-if not os.path.isdir('../data/origin'):
-    os.mkdir('../data/origin')
+files = [f for f in os.listdir('../data') if
+         os.path.isfile('../data/' + f) and not re.match(r'\d\d\d\.csv', f) and re.match(r'.*\.csv', f)]
+indx = DataFrame(columns=['ID', 'city'])
+
+if files:
+    for file in files:
+        indx = indx.append(pd.read_csv("../data/" + file, encoding="utf-8", sep=";"), sort=False)
+    print(indx)
+    idx = max(indx['ID'].to_list())
+else:
+    idx = 0
 startdate = datetime.date(2000, 1, 1)
 enddate = datetime.date(2000, 1, 5)
 delta = datetime.timedelta(days=1000)
+indx = DataFrame(columns=['ID', 'city'])
 for item in stations:
+    idx += 1
+    indx = indx.append(pd.DataFrame([[idx, item[1]]], columns=['ID', 'city']))
     df = DataFrame(columns=["date", "tempMax", "tempMin", "press", "wind", "falls"])
     print(item[1])
     date = startdate - delta
@@ -101,4 +113,29 @@ for item in stations:
     # print(df['date'])
     df['date'] = pd.to_datetime(df['date'], format='%d.%m.%Y')
     print(df)
-    df.to_csv('../data/origin/' + ''.join(item[1].split()) + '.csv', sep=";", index=False, encoding='utf-8')
+    df.to_csv('../data/' + '{0:3}'.format(idx) + '.csv', sep=";", index=False, encoding='utf-8')
+
+indx = indx.set_index('ID')
+print(indx)
+indx.to_csv('../data/index.csv', sep=";", encoding='utf-8')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
