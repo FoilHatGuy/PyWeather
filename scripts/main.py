@@ -11,7 +11,7 @@ from scripts.editdialog import EditDialog
 
 class Data:
     def __init__(self):
-        self.cityindex = pd.read_csv("../data/index.csv", encoding="utf-8", sep=";", index_col='city')
+        self.cityindex = pd.read_csv("../data/index.csv", encoding="utf-8", sep=";", index_col=u'city')
         self.mindate = dt.date(3000, 1, 1)
         self.maxdate = dt.date(1000, 1, 1)
         self.cityindex['minDate'] = pd.to_datetime(self.cityindex['minDate'], format='%Y-%m-%d')
@@ -20,17 +20,21 @@ class Data:
         self.maxdate = max(set(self.cityindex['maxDate']))
 
     def getdata(self, filters):
-        print(filters)
-        dictdf = {filters[0]: {'city': self.cityindex[filters[0]]}} if filters[0] != 'Все' else self.cityindex.to_dict('index')
-        df = pd.DataFrame()
-        print(dictdf)
+        # print(filters)
+        dictdf = {filters[0]: {'city': self.cityindex.loc[filters[0]]}} if filters[0] != 'Все' else self.cityindex.to_dict('index')
+        # df = pd.DataFrame(columns=['tempMax', 'tempMin', 'press', 'wind', 'falls'])
+        # print('dictdf: ', dictdf)
+        df = {}
         for x in dictdf.keys():
-            print(self.cityindex['Петропавловск - Камчатский'])
-            buf = pd.read_csv(self.cityindex[x]['ID'] + '.csv', encoding="utf-8", sep=";", index_col='date')
-            buf['date'] = pd.to_datetime(buf['date'])
-            df.append(buf[(buf.index.day == int(filters[1]) if filters[1] != 'Все' else True) &
-                          (buf.index.month == int(filters[2]) if filters[2] != 'Все' else True) &
-                          (buf.index.year == int(filters[3]) if filters[3] != 'Все' else buf.index.year > 0)])
+            # print(df)
+            buf = pd.read_csv('../data/{0:03d}.csv'.format(self.cityindex.loc[x]['ID']), encoding="utf-8", sep=";", index_col='date')
+            # print(buf)
+            buf.index = pd.to_datetime(buf.index)
+            ioi = buf[(buf.index.day == int(filters[1]) if filters[1] != 'Все' else True) &
+                      (buf.index.month == int(filters[2]) if filters[2] != 'Все' else True) &
+                      (buf.index.year == int(filters[3]) if filters[3] != 'Все' else buf.index.year > 0)]
+            # print(ioi)
+            df.update({x: ioi})
         return df
 
     def getcities(self):
@@ -209,7 +213,7 @@ class Gui:
         save_butt.grid(row=3, column=0, pady=8)
         # >>>>>>> a945df43bd1acf5d7e229d8915c95378b3e0bcf2
         # editor panel ends
-        self.askdata(['Все', '01', '01', '2000'])
+        self.askdata(['Все', 'Все', 'Все', 'Все'])
 
         # canvas with graphs
         bottom = ttk.Frame(self.root, relief=self.view, borderwidth=5, height=100, width=100)
@@ -259,12 +263,13 @@ class Gui:
         df = self.pointer.getdata(filt)
         # print(df)
         self.table.delete(*self.table.get_children())
-        for row in df.to_dict('records'):
-            # print(row)
-            rowdata = row[1].tolist()
-            print(row[0], "AAA", row[1].tolist())
-            self.table.insert("", "end", iid=row[0].strftime("%d.%m.%Y"), text=row[0].strftime("%d.%m.%Y"),
-                              values=[city, row[0].strftime("%d.%m.%Y")] + rowdata)
+        for city in df.keys():
+            for row in df[city].to_dict('index').items():
+                row = list(row)
+                row[0] = dt.date(row[0].year, row[0].month, row[0].day)
+                print(row)
+                self.table.insert("", "end", iid=(row[0].strftime("%d.%m.%Y"), city), text=row[0].strftime("%d.%m.%Y"),
+                                  values=[city, row[0]] + list(row[1].values()))
         # example of element:
         # print(list(df.iterrows())[0])
 
