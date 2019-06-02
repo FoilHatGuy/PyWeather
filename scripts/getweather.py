@@ -98,10 +98,9 @@ else:
 startdate = datetime.date(2000, 1, 1)
 enddate = datetime.date(2000, 1, 5)
 delta = datetime.timedelta(days=1000)
-indx = DataFrame(columns=['ID', 'city'])
+indx = DataFrame(columns=['ID', 'city', 'minDate', 'maxDate'])
 for item in stations:
     idx += 1
-    indx = indx.append(pd.DataFrame([[idx, item[1]]], columns=['ID', 'city']))
     df = DataFrame(columns=["date", "tempMax", "tempMin", "press", "wind", "falls"])
     print(item[1])
     date = startdate - delta
@@ -113,11 +112,13 @@ for item in stations:
     # print(df['date'])
     df['date'] = pd.to_datetime(df['date'], format='%d.%m.%Y')
     print(df)
-    df.to_csv('../data/' + '{0:3}'.format(idx) + '.csv', sep=";", index=False, encoding='utf-8')
+    df.to_csv('../data/' + '{0:03}'.format(idx) + '.csv', sep=";", index=False, encoding='utf-8')
 
-indx = indx.set_index('ID')
+    indx = indx.append(pd.DataFrame([[idx, item[1], min(set(df['date'])), max(set(df['date']))]], columns=['ID', 'city', 'minDate', 'maxDate']))
+
+# indx = indx.set_index('ID')
 print(indx)
-indx.to_csv('../data/index.csv', sep=";", encoding='utf-8')
+indx.to_csv('../data/index.csv', sep=";", encoding='utf-8', index=False)
 
 
 
