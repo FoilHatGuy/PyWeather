@@ -21,13 +21,16 @@ class Data:
 
     def getdata(self, filters):
         # print(filters)
-        dictdf = {filters[0]: {'city': self.cityindex.loc[filters[0]]}} if filters[0] != 'Все' else self.cityindex.to_dict('index')
+        dictdf = {filters[0]: {'city': self.cityindex.loc[filters[0]]}} if filters[
+                                                                               0] != 'Все' else self.cityindex.to_dict(
+            'index')
         # df = pd.DataFrame(columns=['tempMax', 'tempMin', 'press', 'wind', 'falls'])
         # print('dictdf: ', dictdf)
         df = {}
         for x in dictdf.keys():
             # print(df)
-            buf = pd.read_csv('../data/{0:03d}.csv'.format(self.cityindex.loc[x]['ID']), encoding="utf-8", sep=";", index_col='date')
+            buf = pd.read_csv('../data/{0:03d}.csv'.format(self.cityindex.loc[x]['ID']), encoding="utf-8", sep=";",
+                              index_col='date')
             # print(buf)
             buf.index = pd.to_datetime(buf.index)
             ioi = buf[(buf.index.day == int(filters[1]) if filters[1] != 'Все' else True) &
@@ -57,6 +60,13 @@ class Data:
             self.cityindex = pd.read_csv(route, encoding="utf-8", sep=";")
 
     def update_row(self, iid, values):
+        print(values)
+        print(iid)
+        print(iid.split())
+        ddf = pd.DataFrame.from_dict({0: [iid.split()[0]] + values[2:]}, orient='index', columns=["date", "tempMax", "tempMin", "press", "wind", "falls"]).set_index('date')
+        df = pd.read_csv('../data/{0:03d}.csv'.format(self.cityindex.loc[iid.split()[1]]['ID']), encoding="utf-8", sep=";", index_col='date')
+        df.update(ddf)
+        df.to_csv('../data/{0:03d}.csv'.format(self.cityindex.loc[iid.split()[1]]['ID']), encoding="utf-8", sep=";", index=False)
 
         pass
 
@@ -252,7 +262,7 @@ class Gui:
 
                 # <editor-fold desc="DataFrame">
                 new_values[1] = dt.datetime.strptime(new_values[1], "%d.%m.%Y")
-                self.pointer.update_row(int(curr_item), new_values)
+                self.pointer.update_row(curr_item, new_values)
                 # </editor-fold>
 
     def delete(self, data):
@@ -267,7 +277,7 @@ class Gui:
                 row = list(row)
                 row[0] = dt.date(row[0].year, row[0].month, row[0].day)
                 # print(row)
-                self.table.insert("", "end", iid=(row[0], city), text=row[0].strftime("%d.%m.%Y"),
+                self.table.insert("", "end", iid=str(row[0]) + ' ' + city, text=row[0].strftime("%d.%m.%Y"),
                                   values=[city, row[0].strftime("%d.%m.%Y")] + list(row[1].values()))
         # example of element:
         # print(list(df.iterrows())[0])
