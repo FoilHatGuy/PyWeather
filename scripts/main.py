@@ -50,8 +50,6 @@ class Data:
         if route is not None:
             self.dataframe.to_csv(route, encoding="utf-8", sep=";", index=False)
 
-    # <<<<<<< HEAD
-    # =======
     def open(self):
         route = fd.askopenfilename(initialdir="../data/", title="Select file to open", defaultextension='.csv',
                                    filetypes=(("csv files", "*.csv"), ("all files", "*.*")))
@@ -59,7 +57,8 @@ class Data:
             self.cityindex = pd.read_csv(route, encoding="utf-8", sep=";")
 
     def update_row(self, iid, values):
-        self.dataframe.iloc[iid] = values
+
+        pass
 
 
 class Gui:
@@ -237,7 +236,7 @@ class Gui:
         if self.table.focus() != '':
             self.edit_button.config(state=tk.DISABLED)
             curr_item = self.table.focus()
-            print(type(curr_item))
+            # print(curr_item)
             curr_item_info = self.table.item(self.table.focus())
             edialog = EditDialog(self.root, [curr_item] + curr_item_info['values'])
             if 'normal' == self.root.state():
@@ -246,9 +245,9 @@ class Gui:
                 new_values = edialog.get_values()
 
                 # <editor-fold desc="Table">
-                index = self.table.index(curr_item)
-                self.table.delete(curr_item)
-                self.table.insert("", index, iid=curr_item, text=curr_item, values=new_values)
+                self.table.item(curr_item, text=curr_item, values=new_values)
+                # self.table.delete(curr_item)
+                # self.table.insert("", index, iid=curr_item, text=curr_item, values=new_values)
                 # </editor-fold>
 
                 # <editor-fold desc="DataFrame">
@@ -267,9 +266,9 @@ class Gui:
             for row in df[city].to_dict('index').items():
                 row = list(row)
                 row[0] = dt.date(row[0].year, row[0].month, row[0].day)
-                print(row)
-                self.table.insert("", "end", iid=(row[0].strftime("%d.%m.%Y"), city), text=row[0].strftime("%d.%m.%Y"),
-                                  values=[city, row[0]] + list(row[1].values()))
+                # print(row)
+                self.table.insert("", "end", iid=(row[0], city), text=row[0].strftime("%d.%m.%Y"),
+                                  values=[city, row[0].strftime("%d.%m.%Y")] + list(row[1].values()))
         # example of element:
         # print(list(df.iterrows())[0])
 
