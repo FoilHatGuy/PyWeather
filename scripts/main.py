@@ -19,13 +19,54 @@ class Data:
         self.mindate = min(set(self.cityindex['minDate']))
         self.maxdate = max(set(self.cityindex['maxDate']))
 
+        # print(self.cityindex)
+
+        self.load_data()
+
+    def load_data(self):
+        """
+        Loads 001.csv ... xxx.csv to dict of dataframes
+
+        :return:
+        """
+
+        self.dictdf = {}
+        for row in self.cityindex.iterrows():
+            id_str = str(row[1]['ID']).zfill(3)
+            self.dictdf[row[0]] = pd.read_csv("../data/"+id_str+".csv", encoding="utf-8", sep=";", index_col=u'date')
+            self.dictdf[row[0]].index = pd.to_datetime(self.dictdf[row[0]].index)
+
+        print(self.dictdf['Петропавловск-Камчатский'])
+
+    def my_get_data(self, filters):
+        """
+        Returns dict of dataframes with cities which match to filters
+
+        :param filters: list of filters
+        :return: dict of dataframes
+        """
+
+        dictdf = {}
+        if filters[0] == 'Все':
+            for city in self.dictdf.keys():
+                dictdf[city] = self.dictdf[city][(self.dictdf[city].index.day == int(filters[1]) if filters[1] != 'Все' else True) &
+                                                        (self.dictdf[city].index.month == int(filters[2]) if filters[2] != 'Все' else True) &
+                                                        (self.dictdf[city].index.year == int(filters[3]) if filters[3] != 'Все' else self.dictdf[city].index.year > 0)]
+
+        else:
+            dictdf[filters[0]] = self.dictdf[filters[0]][(self.dictdf[filters[0]].index.day == int(filters[1]) if filters[1] != 'Все' else True) &
+                                             (self.dictdf[filters[0]].index.month == int(filters[2]) if filters[2] != 'Все' else True) &
+                                             (self.dictdf[filters[0]].index.year == int(filters[3]) if filters[3] != 'Все' else self.dictdf[filters[0]].index.year > 0)]
+        return dictdf
+
+
     def getdata(self, filters):
         # print(filters)
         dictdf = {filters[0]: {'city': self.cityindex.loc[filters[0]]}} if filters[
                                                                                0] != 'Все' else self.cityindex.to_dict(
             'index')
         # df = pd.DataFrame(columns=['tempMax', 'tempMin', 'press', 'wind', 'falls'])
-        # print('dictdf: ', dictdf)
+        #print('dictdf: ', dictdf)
         df = {}
         for x in dictdf.keys():
             # print(df)
@@ -46,10 +87,7 @@ class Data:
     def getdate(self):
         return [self.mindate, self.maxdate]
 
-    def save(self):
-        route = fd.askdirectory(initialdir="../data/", title="Select file to save", defaultextension='.csv',
-                                filetypes=(("csv files", "*.csv"), ("all files", "*.*")))
-        # print(self.dataframe)
+    def save(self, route):
         if route is not None:
             self.dataframe.to_csv(route, encoding="utf-8", sep=";", index=False)
 
@@ -265,11 +303,17 @@ class Gui:
                 self.pointer.update_row(curr_item, new_values)
                 # </editor-fold>
 
+    def save(self):
+        route = fd.askdirectory(initialdir="../data/", title="Select file to save", defaultextension='.csv',
+                                filetypes=(("csv files", "*.csv"), ("all files", "*.*")))
+        self.pointer.save(route)
+        pass
+
     def delete(self, data):
         pass
 
     def askdata(self, filt):
-        df = self.pointer.getdata(filt)
+        df = self.pointer.my_get_data(filt)
         # print(df)
         self.table.delete(*self.table.get_children())
         for city in df.keys():
