@@ -2,8 +2,9 @@ import datetime as dt
 import re
 import tkinter as tk
 import tkinter.filedialog as fd
+import tkinter.messagebox as msg
 import tkinter.ttk as ttk
-
+import os
 import pandas as pd
 
 from scripts.editdialog import EditDialog
@@ -11,7 +12,9 @@ from scripts.editdialog import EditDialog
 
 class Data:
     def __init__(self):
-        self.cityindex = pd.read_csv("../data/index.csv", encoding="utf-8", sep=";", index_col=u'city')
+        self.dictdf = {}
+        self.cityindex = pd.DataFrame()
+        self.load_data("../data/index.csv")
         self.mindate = dt.date(3000, 1, 1)
         self.maxdate = dt.date(1000, 1, 1)
         self.cityindex['minDate'] = pd.to_datetime(self.cityindex['minDate'], format='%Y-%m-%d')
@@ -19,24 +22,23 @@ class Data:
         self.mindate = min(set(self.cityindex['minDate']))
         self.maxdate = max(set(self.cityindex['maxDate']))
 
-        # print(self.cityindex)
+        # print(self.dictdf)
 
-        self.load_data()
-
-    def load_data(self):
+    def load_data(self, route):
         """
         Loads 001.csv ... xxx.csv to dict of dataframes
 
         :return:
         """
-
-        self.dictdf = {}
+        self.cityindex = pd.read_csv(route, encoding="utf-8", sep=";", index_col=u'city')
+        direct = '/'.join(route.split('/')[:-1]) + '/'
         for row in self.cityindex.iterrows():
             id_str = str(row[1]['ID']).zfill(3)
-            self.dictdf[row[0]] = pd.read_csv("../data/"+id_str+".csv", encoding="utf-8", sep=";", index_col=u'date')
+            self.dictdf.update(
+                {row[0]: pd.read_csv(direct + id_str + ".csv", encoding="utf-8", sep=";").set_index('date')})
             self.dictdf[row[0]].index = pd.to_datetime(self.dictdf[row[0]].index)
 
-        print(self.dictdf['Петропавловск-Камчатский'])
+        # print(self.dictdf['Петропавловск-Камчатский'])
 
     def my_get_data(self, filters):
         """
@@ -49,37 +51,41 @@ class Data:
         dictdf = {}
         if filters[0] == 'Все':
             for city in self.dictdf.keys():
-                dictdf[city] = self.dictdf[city][(self.dictdf[city].index.day == int(filters[1]) if filters[1] != 'Все' else True) &
-                                                        (self.dictdf[city].index.month == int(filters[2]) if filters[2] != 'Все' else True) &
-                                                        (self.dictdf[city].index.year == int(filters[3]) if filters[3] != 'Все' else self.dictdf[city].index.year > 0)]
+                dictdf[city] = self.dictdf[city][
+                    (self.dictdf[city].index.day == int(filters[1]) if filters[1] != 'Все' else True) &
+                    (self.dictdf[city].index.month == int(filters[2]) if filters[2] != 'Все' else True) &
+                    (self.dictdf[city].index.year == int(filters[3]) if filters[3] != 'Все' else self.dictdf[
+                                                                                                     city].index.year > 0)]
 
         else:
-            dictdf[filters[0]] = self.dictdf[filters[0]][(self.dictdf[filters[0]].index.day == int(filters[1]) if filters[1] != 'Все' else True) &
-                                             (self.dictdf[filters[0]].index.month == int(filters[2]) if filters[2] != 'Все' else True) &
-                                             (self.dictdf[filters[0]].index.year == int(filters[3]) if filters[3] != 'Все' else self.dictdf[filters[0]].index.year > 0)]
+            dictdf[filters[0]] = self.dictdf[filters[0]][
+                (self.dictdf[filters[0]].index.day == int(filters[1]) if filters[1] != 'Все' else True) &
+                (self.dictdf[filters[0]].index.month == int(filters[2]) if filters[2] != 'Все' else True) &
+                (self.dictdf[filters[0]].index.year == int(filters[3]) if filters[3] != 'Все' else self.dictdf[filters[
+                    0]].index.year > 0)]
         return dictdf
 
-
-    def getdata(self, filters):
-        # print(filters)
-        dictdf = {filters[0]: {'city': self.cityindex.loc[filters[0]]}} if filters[
-                                                                               0] != 'Все' else self.cityindex.to_dict(
-            'index')
-        # df = pd.DataFrame(columns=['tempMax', 'tempMin', 'press', 'wind', 'falls'])
-        #print('dictdf: ', dictdf)
-        df = {}
-        for x in dictdf.keys():
-            # print(df)
-            buf = pd.read_csv('../data/{0:03d}.csv'.format(self.cityindex.loc[x]['ID']), encoding="utf-8", sep=";",
-                              index_col='date')
-            # print(buf)
-            buf.index = pd.to_datetime(buf.index)
-            ioi = buf[(buf.index.day == int(filters[1]) if filters[1] != 'Все' else True) &
-                      (buf.index.month == int(filters[2]) if filters[2] != 'Все' else True) &
-                      (buf.index.year == int(filters[3]) if filters[3] != 'Все' else buf.index.year > 0)]
-            # print(ioi)
-            df.update({x: ioi})
-        return df
+    #
+    # def getdata(self, filters):
+    #     # print(filters)
+    #     dictdf = {filters[0]: {'city': self.cityindex.loc[filters[0]]}} if filters[
+    #                                                                            0] != 'Все' else self.cityindex.to_dict(
+    #         'index')
+    #     # df = pd.DataFrame(columns=['tempMax', 'tempMin', 'press', 'wind', 'falls'])
+    #     #print('dictdf: ', dictdf)
+    #     df = {}
+    #     for x in dictdf.keys():
+    #         # print(df)
+    #         buf = pd.read_csv('../data/{0:03d}.csv'.format(self.cityindex.loc[x]['ID']), encoding="utf-8", sep=";",
+    #                           index_col='date')
+    #         # print(buf)
+    #         buf.index = pd.to_datetime(buf.index)
+    #         ioi = buf[(buf.index.day == int(filters[1]) if filters[1] != 'Все' else True) &
+    #                   (buf.index.month == int(filters[2]) if filters[2] != 'Все' else True) &
+    #                   (buf.index.year == int(filters[3]) if filters[3] != 'Все' else buf.index.year > 0)]
+    #         # print(ioi)
+    #         df.update({x: ioi})
+    #     return df
 
     def getcities(self):
         return self.cityindex.index.to_list()
@@ -88,24 +94,59 @@ class Data:
         return [self.mindate, self.maxdate]
 
     def save(self, route):
-        if route is not None:
-            self.dataframe.to_csv(route, encoding="utf-8", sep=";", index=False)
+        direct = '/'.join(route.split('/')[:-1]) + '/'
+        files = [f for f in os.listdir(direct) if
+                 os.path.isfile(direct + f) and not re.match(r'\d\d\d\.csv', f) and re.match(r'.*\.csv', f)]
+        indx = pd.DataFrame(columns=['ID', 'city', 'minDate', 'maxDate'])
 
-    def open(self):
+        if files:
+            for file in files:
+                indx = indx.append(pd.read_csv(direct + file, encoding="utf-8", sep=";"), sort=False)
+            # print(indx)
+            idx = max(indx['ID'].to_list())
+        else:
+            idx = 0
+        indx = pd.DataFrame(columns=['ID', 'city', 'minDate', 'maxDate'])
+        for item in self.cityindex.iterrows():
+            # print(item[0])
+            idx += 1
+            self.dictdf[item[0]]\
+                .to_csv(direct + '{0:03}'.format(idx) + '.csv',
+                                        sep=";",
+                                        index=False,
+                                        encoding='utf-8')
+            indx = indx.append(pd.DataFrame([[idx, item[0],
+                                              min(set(self.dictdf[item[0]].index)),
+                                              max(set(self.dictdf[item[0]].index))]],
+                                            columns=['ID', 'city', 'minDate', 'maxDate']))
+        indx.to_csv(route, sep=";", encoding='utf-8', index=False)
+
+    def open(self, route):  # TODO remove askopenfile
+        direct = '/'.join(route.split('/')[:-1]) + '/'
         route = fd.askopenfilename(initialdir="../data/", title="Select file to open", defaultextension='.csv',
                                    filetypes=(("csv files", "*.csv"), ("all files", "*.*")))
         if route is not None and not re.match(r'\d\d\d\.csv', route):
             self.cityindex = pd.read_csv(route, encoding="utf-8", sep=";")
 
     def update_row(self, iid, values):
-        print(values)
-        print(iid)
-        print(iid.split())
-        ddf = pd.DataFrame.from_dict({0: [iid.split()[0]] + values[2:]}, orient='index', columns=["date", "tempMax", "tempMin", "press", "wind", "falls"]).set_index('date')
-        df = pd.read_csv('../data/{0:03d}.csv'.format(self.cityindex.loc[iid.split()[1]]['ID']), encoding="utf-8", sep=";", index_col='date')
-        df.update(ddf)
-        df.to_csv('../data/{0:03d}.csv'.format(self.cityindex.loc[iid.split()[1]]['ID']), encoding="utf-8", sep=";", index=False)
+        # print(values)
+        # print(iid)
+        # print(iid.split())
+        ddf = pd.DataFrame.from_dict({0: [iid.split()[0]] + values[2:]}, orient='index',
+                                     columns=["date", "tempMax", "tempMin", "press", "wind", "falls"]).set_index('date')
+        # df = pd.read_csv('../data/{0:03d}.csv'.format(self.cityindex.loc[iid.split()[1]]['ID']),
+        # encoding="utf-8", sep=";", index_col='date')
+        self.dictdf[iid.split()[1]].update(ddf)
+        # df.to_csv('../data/{0:03d}.csv'.format(self.cityindex.loc[iid.split()[1]]['ID']),
+        # encoding="utf-8", sep=";", index=False)
 
+    def delete_row(self, item):
+        print(item)
+        self.dictdf[item.split()[1]] = self.dictdf[item.split()[1]].drop(dt.datetime.strptime(item.split()[0], '%Y-%m-%d'), axis='index')
+        if self.dictdf[item.split()[1]].size == 0:
+            self.cityindex = self.cityindex.drop(item.split()[1])
+            self.dictdf.pop(item.split()[1])
+            # print(self.dictdf)
         pass
 
 
@@ -238,12 +279,12 @@ class Gui:
         editor = ttk.Frame(top, relief=self.view, borderwidth=5)
         editor.grid(column=1, row=0, columnspan=3)
         # <<<<<<< HEAD
-        #         button1 = ttk.Button(editor, text="Insert row", command=lambda: self.insert(self.df))
+        #         button1 = tttk.Button(editor, text="Insert row", command=lambda: self.insert(self.df))
         #         button1.grid(row=0, column=0, pady=8)
-        #         button2 = ttk.Button(editor, text="open file", command=lambda: self.pointer.open())
+        #         button2 = tttk.Button(editor, text="open file", command=lambda: self.pointer.open())
         #         button2.grid(row=1, column=0, pady=8)
         #
-        #         button2 = ttk.Button(editor, text="Save to disk", command=lambda: self.pointer.save())
+        #         button2 = tttk.Button(editor, text="Save to disk", command=lambda: self.pointer.save())
         #         button2.grid(row=2, column=0, pady=8)
         # =======
 
@@ -256,8 +297,12 @@ class Gui:
         self.delete_but = ttk.Button(editor, text="Delete row", command=self.delete)
         self.delete_but.grid(row=2, column=0, pady=8)
 
-        save_butt = ttk.Button(editor, text="Save to disk", command=lambda: self.pointer.save())
+        save_butt = ttk.Button(editor, text="Save to disk", command=lambda: self.save())
         save_butt.grid(row=3, column=0, pady=8)
+
+        delete_but = ttk.Button(editor, text="Load database", command=self.load)
+        delete_but.grid(row=4, column=0, pady=8)
+
         # >>>>>>> a945df43bd1acf5d7e229d8915c95378b3e0bcf2
         # editor panel ends
         self.askdata(['Все', 'Все', 'Все', 'Все'])
@@ -266,11 +311,11 @@ class Gui:
         bottom = ttk.Frame(self.root, relief=self.view, borderwidth=5, height=100, width=100)
         bottom.pack(anchor='s', fill='y')
 
-        but1 = tk.Button(bottom, text="This is not a button")
+        but1 = ttk.Button(bottom, text="This is not a button")
         but1.grid(row=0, column=0, pady=8)
-        but2 = tk.Button(bottom, text="This one too")
+        but2 = ttk.Button(bottom, text="This one too")
         but2.grid(row=1, column=0, pady=8)
-        but3 = tk.Button(bottom, text="Don't press me")
+        but3 = ttk.Button(bottom, text="Don't press me")
         but3.grid(row=2, column=0, pady=8)
         # /canvas
 
@@ -279,6 +324,15 @@ class Gui:
 
     def insert(self, data):
         pass
+
+    def load(self):
+        route = fd.askopenfilename()
+        print(route)
+        if not re.match(r'.*\d{3}\.csv', route):
+            if route:
+                self.pointer.load_data(route)
+        else:
+            msg.showerror('Недопустимое имя', "Имя файла имеет недопустимы формат. Пожалуйста, введите другое имя.")
 
     def editrow(self):
         if self.table.focus() != '':
@@ -291,26 +345,26 @@ class Gui:
                 self.edit_button.config(state=tk.NORMAL)
             if edialog.exit_code == 1:
                 new_values = edialog.get_values()
-
-                # <editor-fold desc="Table">
                 self.table.item(curr_item, text=curr_item, values=new_values)
-                # self.table.delete(curr_item)
-                # self.table.insert("", index, iid=curr_item, text=curr_item, values=new_values)
-                # </editor-fold>
-
-                # <editor-fold desc="DataFrame">
                 new_values[1] = dt.datetime.strptime(new_values[1], "%d.%m.%Y")
                 self.pointer.update_row(curr_item, new_values)
-                # </editor-fold>
 
     def save(self):
-        route = fd.askdirectory(initialdir="../data/", title="Select file to save", defaultextension='.csv',
-                                filetypes=(("csv files", "*.csv"), ("all files", "*.*")))
-        self.pointer.save(route)
-        pass
+        route = fd.asksaveasfilename(title="Select file to save",
+                                        filetypes=(("csv files", ".csv"),
+                                                   ("all files", ".*")),
+                                        defaultextension='.csv',
+                                        initialdir="../data/")
+        if not re.match(r'\d{3}\.csv', route):
+            self.pointer.save(route)
+        else:
+            msg.showerror('Недопустимое имя', "Имя файла имеет недопустимы формат. Пожалуйста, введите другое имя.")
 
-    def delete(self, data):
-        pass
+    def delete(self):
+        if self.table.focus() != '':
+            curr_item = self.table.focus()
+            self.table.delete(curr_item)
+            self.pointer.delete_row(curr_item)
 
     def askdata(self, filt):
         df = self.pointer.my_get_data(filt)
