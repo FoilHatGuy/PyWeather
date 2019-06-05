@@ -5,7 +5,7 @@ g_padx = 8
 g_pady = 8
 
 
-class EditDialog(tk.Toplevel):
+class InsertDialog(tk.Toplevel):
     def __init__(self, root, values):
         tk.Toplevel.__init__(self, root)
 
@@ -43,12 +43,12 @@ class EditDialog(tk.Toplevel):
 
         self.text_city = tk.StringVar()
         self.text_city.set(values[1])
-        self.entry_city = ttk.Entry(self, state="readonly", textvariable=self.text_city, width=30)
+        self.entry_city = ttk.Entry(self, textvariable=self.text_city, width=30)
         self.entry_city.grid(column=1, row=0, padx=g_padx, columnspan=2)
 
         self.text_date = tk.StringVar()
         self.text_date.set(values[2])
-        self.entry_date = ttk.Entry(self, state="readonly", textvariable=self.text_date, width=30)
+        self.entry_date = ttk.Entry(self, textvariable=self.text_date, width=30)
         self.entry_date.grid(column=1, row=1, padx=g_padx, columnspan=2)
 
         self.text_max_temp = tk.StringVar()
