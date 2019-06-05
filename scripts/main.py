@@ -55,7 +55,7 @@ class Gui:
         top_left = ttk.Frame(top, relief=self.view, borderwidth=5)
         top_left.grid(column=0, row=0)
 
-        # upper toolbar with filters
+        # <editor-fold desc="Filters toolbar">
         toolbar = ttk.Frame(top_left, relief=self.view, borderwidth=5)
         toolbar.grid(row=0, column=0, columnspan=3)
 
@@ -92,9 +92,9 @@ class Gui:
 
         month.bind('<<ComboboxSelected>>', daysupdatecounter)
         year.bind('<<ComboboxSelected>>', daysupdatecounter)
-        # toolbar ends
+        # </editor-fold>
 
-        # table starts
+        # <editor-fold desc="Table">
         tableframe = ttk.Frame(top_left, relief='groove', borderwidth=2)
         tableframe.grid(row=1, column=0, columnspan=3)
 
@@ -130,20 +130,12 @@ class Gui:
 
         self.table.column('falls', width=50)
         self.table.heading('falls', text='Осадки')
-        # table ends
+        # </editor-fold>
 
-        # right editor panel
+        # <editor-fold desc="Right editor panel">
         editor = ttk.Frame(top, relief=self.view, borderwidth=5)
         editor.grid(column=1, row=0, columnspan=3)
-        # <<<<<<< HEAD
-        #         button1 = tttk.Button(editor, text="Insert row", command=lambda: self.insert(self.df))
-        #         button1.grid(row=0, column=0, pady=8)
-        #         button2 = tttk.Button(editor, text="open file", command=lambda: self.pointer.open())
-        #         button2.grid(row=1, column=0, pady=8)
-        #
-        #         button2 = tttk.Button(editor, text="Save to disk", command=lambda: self.pointer.save())
-        #         button2.grid(row=2, column=0, pady=8)
-        # =======
+
 
         self.insert_but = ttk.Button(editor, text="Insert row", command=self.insert)
         self.insert_but.grid(row=0, column=0, pady=8)
@@ -160,11 +152,9 @@ class Gui:
         delete_but = ttk.Button(editor, text="Load database", command=self.load)
         delete_but.grid(row=4, column=0, pady=8)
 
-        # >>>>>>> a945df43bd1acf5d7e229d8915c95378b3e0bcf2
-        # editor panel ends
-        self.askdata(['Все', 'Все', 'Все', 'Все'])
+        #</editor-fold>
 
-        # <editor-fold desc="graphs area">
+        # <editor-fold desc="Graphs area">
         graph_area = ttk.Frame(self.root, relief=self.view, borderwidth=5, height=100, width=100)
         graph_area.pack(anchor='s', fill='y')
 
@@ -180,6 +170,8 @@ class Gui:
 
 
         # </editor-fold>
+
+        self.askdata(['Все', 'Все', 'Все', 'Все'])
 
         self.root.update()
         self.root.mainloop()
@@ -258,18 +250,48 @@ class Gui:
                                   values=[city, row[0].strftime("%d.%m.%Y")] + list(row[1].values()))
 
         # <editor-fold desc="diagram">
+        graph_drawed = False
+        # All cities in one day
         if filt[0] == 'Все' and filt[1] != 'Все' and filt[2] != 'Все' and filt[3] != 'Все':  # TODO: refactor this shit
             cities = df.keys()
             values = [x.loc[filt[3]+"-"+filt[2]+"-"+filt[1]]['tempMax'] for x in df.values()]
-            print('Values: ', values)
-
-
+            
             x = np.arange(len(df.keys()))
             if (self.plot):
                 plt.clf()
             self.plot = plt.bar(x, values)
             plt.xticks(x, df.keys(), rotation='vertical')
             plt.tight_layout()
+            graph_drawed = True
+
+        # One month of year in one city
+        elif filt[0] != 'Все' and filt[1] == 'Все' and filt[2] != 'Все' and filt[3] != 'Все':
+            city = list(df.keys())[0]
+            print(city)
+
+            dates = []
+            values = []
+
+            for row in df[city].iterrows():
+                dates.append(row[0].strftime("%d.%m.%Y"))
+                values.append(row[1]['tempMax'])
+
+            print(dates)
+            print(values)
+
+            x = np.arange(len(dates))
+            if (self.plot):
+                plt.clf()
+            self.plot = plt.plot(x, values)
+            plt.title(city)
+            plt.xticks(x, dates, rotation='vertical')
+            plt.tight_layout()
+            graph_drawed = True
+
+            # graph_drawed = True
+            pass
+
+        if graph_drawed:
             plt.savefig("../graphics/tmp.png")
 
             self.photo = PhotoImage(file="../graphics/tmp.png")
