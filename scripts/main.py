@@ -209,10 +209,9 @@ class Gui:
                 print(new_values)
                 print(curr_item)
                 # self.table.insert("", index, iid=curr_item, text=curr_item, values=new_values)
-
-                # self.table.insert('', curr_item, iid=[dt.datetime.strftime(new_values[1], '%d.%m.%Y'), new_values[0]], text=curr_item, values=new_values)
+                self.table.insert('', self.table.index(curr_item) + 1, iid=[dt.datetime.strptime(new_values[1], '%d.%m.%Y'), new_values[0]], text=curr_item, values=new_values)
                 # new_values[1] = dt.datetime.strptime(new_values[1], "%d.%m.%Y")
-                # self.pointer.insert_row(curr_item, new_values)
+                self.pointer.insert_row(curr_item, new_values)
 
     def editrow(self):
         if self.table.focus() != '':

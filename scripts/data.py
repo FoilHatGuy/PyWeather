@@ -26,15 +26,15 @@ class Data:
         :param filters: list of filters
         :return: dict of dataframes
         """
-
         dictdf = {}
         if filters[0] == 'Все':
             for city in self.dictdf.keys():
+                # print(self.dictdf[city].index.year>0)
                 dictdf[city] = self.dictdf[city][
                     (self.dictdf[city].index.day == int(filters[1]) if filters[1] != 'Все' else True) &
                     (self.dictdf[city].index.month == int(filters[2]) if filters[2] != 'Все' else True) &
-                    (self.dictdf[city].index.year == int(filters[3]) if filters[3] != 'Все' else self.dictdf[
-                                                                                                     city].index.year > 0)]
+                    (self.dictdf[city].index.year == int(filters[3]) if filters[3] != 'Все' else
+                     self.dictdf[city].index.year > 0)]
 
         else:
             dictdf[filters[0]] = self.dictdf[filters[0]][
@@ -117,6 +117,28 @@ class Data:
             self.dictdf[row[0]].index = pd.to_datetime(self.dictdf[row[0]].index)
 
         # print(self.dictdf)
+
+    def insert_row(self, iid, values):
+        print(dt.datetime.strptime(str(iid.split()[0]), '%Y-%m-%d'))
+
+        ddf = pd.DataFrame.from_dict({0: [iid.split()[0]] + values[2:]}, orient='index',
+                                     columns=["date", "tempMax", "tempMin", "press", "wind", "falls"]).set_index('date')
+        ddf.index = pd.to_datetime(ddf.index)
+        if values[0] not in self.cityindex.keys():
+            self.cityindex = \
+                self.cityindex.append(pd.DataFrame([[max(self.cityindex['ID']) + 1, values[0],
+                                                     dt.datetime.strptime(iid.split()[0], '%Y-%m-%d'),
+                                                     dt.datetime.strptime(iid.split()[0], '%Y-%m-%d')]],
+                                                   columns=['ID', 'city', 'minDate', 'maxDate']).set_index('city'),
+                                      sort=False)
+            self.dictdf.update({values[0]: ddf})
+        else:
+            self.cityindex.at[iid.split()[1], 'minDate'] = min(self.cityindex.loc[iid.split()[1]]['minDate'],
+                                                               dt.datetime.strptime(iid.split()[0], '%Y-%m-%d'))
+            self.cityindex.at[iid.split()[1], 'maxDate'] = max(self.cityindex.loc[iid.split()[1]]['maxDate'],
+                                                               dt.datetime.strptime(iid.split()[0], '%Y-%m-%d'))
+
+            self.dictdf[iid.split()[1]].update(ddf)
 
     def update_row(self, iid, values):
         # print(values)
