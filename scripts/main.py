@@ -4,12 +4,16 @@ import tkinter as tk
 import tkinter.filedialog as fd
 import tkinter.messagebox as msg
 import tkinter.ttk as ttk
+<<<<<<< HEAD
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from tkinter import PhotoImage
+=======
+>>>>>>> 6228e0aacdfde9bcb907ff91134a3263b4f3820a
 
+from scripts.data import Data
 from scripts.editdialog import EditDialog
 
 
@@ -151,6 +155,7 @@ class Data:
             self.dictdf.pop(item.split()[1])
             # print(self.dictdf)
         pass
+from scripts.insertdialog import InsertDialog
 
 
 class Gui:
