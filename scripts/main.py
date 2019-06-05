@@ -176,6 +176,7 @@ class Gui:
         # but3.grid(row=2, column=0, pady=8)
         self.graph = tk.Label(graph_area)
         self.graph.grid(row=0, column=0)
+        self.plot = None
 
 
         # </editor-fold>
@@ -265,7 +266,9 @@ class Gui:
 
 
             x = np.arange(len(df.keys()))
-            plot = plt.bar(x, values)
+            if (self.plot):
+                plt.clf()
+            self.plot = plt.bar(x, values)
             plt.xticks(x, df.keys(), rotation='vertical')
             plt.tight_layout()
             plt.savefig("../graphics/tmp.png")
