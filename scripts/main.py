@@ -6,6 +6,9 @@ import tkinter.messagebox as msg
 import tkinter.ttk as ttk
 import os
 import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+from tkinter import PhotoImage
 
 from scripts.editdialog import EditDialog
 
@@ -152,7 +155,7 @@ class Data:
 
 class Gui:
     def __init__(self, data):
-        self.view = 'flat'
+        self.view = 'groove'
         self.pointer = data
         self.root = tk.Tk()
         self.root.title("PyWeather")
@@ -307,17 +310,21 @@ class Gui:
         # editor panel ends
         self.askdata(['Все', 'Все', 'Все', 'Все'])
 
-        # canvas with graphs
-        bottom = ttk.Frame(self.root, relief=self.view, borderwidth=5, height=100, width=100)
-        bottom.pack(anchor='s', fill='y')
+        # <editor-fold desc="graphs area">
+        graph_area = ttk.Frame(self.root, relief=self.view, borderwidth=5, height=100, width=100)
+        graph_area.pack(anchor='s', fill='y')
 
-        but1 = ttk.Button(bottom, text="This is not a button")
-        but1.grid(row=0, column=0, pady=8)
-        but2 = ttk.Button(bottom, text="This one too")
-        but2.grid(row=1, column=0, pady=8)
-        but3 = ttk.Button(bottom, text="Don't press me")
-        but3.grid(row=2, column=0, pady=8)
-        # /canvas
+        # but1 = ttk.Button(bottom, text="This is not a button")
+        # but1.grid(row=0, column=0, pady=8)
+        # but2 = ttk.Button(bottom, text="This one too")
+        # but2.grid(row=1, column=0, pady=8)
+        # but3 = ttk.Button(bottom, text="Don't press me")
+        # but3.grid(row=2, column=0, pady=8)
+        self.graph = tk.Label(graph_area)
+        self.graph.grid(row=0, column=0)
+
+
+        # </editor-fold>
 
         self.root.update()
         self.root.mainloop()
@@ -377,6 +384,26 @@ class Gui:
                 # print(row)
                 self.table.insert("", "end", iid=str(row[0]) + ' ' + city, text=row[0].strftime("%d.%m.%Y"),
                                   values=[city, row[0].strftime("%d.%m.%Y")] + list(row[1].values()))
+
+        # <editor-fold desc="diagram">
+        if filt[0] == 'Все' and filt[1] != 'Все' and filt[2] != 'Все' and filt[3] != 'Все':  # TODO: refactor this shit
+            cities = df.keys()
+            values = [x.loc[filt[3]+"-"+filt[2]+"-"+filt[1]]['tempMax'] for x in df.values()]
+            print('Values: ', values)
+
+
+            x = np.arange(len(df.keys()))
+            plot = plt.bar(x, values)
+            plt.xticks(x, df.keys(), rotation='vertical')
+            plt.tight_layout()
+            plt.savefig("../graphics/tmp.png")
+
+            self.photo = PhotoImage(file="../graphics/tmp.png")
+            self.graph.configure(image=self.photo, width=700, height=500)
+
+        # </editor-fold>
+
+
         # example of element:
         # print(list(df.iterrows())[0])
 
