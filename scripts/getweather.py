@@ -96,7 +96,7 @@ if files:
 else:
     idx = 0
 startdate = datetime.date(2000, 1, 1)
-enddate = datetime.date(2000, 1, 5)
+enddate = datetime.date(2002, 1, 1)
 delta = datetime.timedelta(days=1000)
 indx = DataFrame(columns=['ID', 'city', 'minDate', 'maxDate'])
 for item in stations:

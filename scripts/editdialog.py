@@ -1,12 +1,14 @@
 import tkinter as tk
 import tkinter.ttk as ttk
+import re
+from tkinter import messagebox as msg
 
 g_padx = 8
 g_pady = 8
 
 
 class EditDialog(tk.Toplevel):
-    def __init__(self, root, values):
+    def __init__(self, root, values, edit):
         tk.Toplevel.__init__(self, root)
 
         self.geometry("+"+str(root.winfo_x()-25)+"+"+str(root.winfo_y()+150))
@@ -41,15 +43,20 @@ class EditDialog(tk.Toplevel):
         # self.entry_id = ttk.Entry(self, state='readonly', textvariable=self.text_id)
         # self.entry_id.grid(column=1, row=0, padx=g_padx)
 
+
         self.text_city = tk.StringVar()
         self.text_city.set(values[1])
-        self.entry_city = ttk.Entry(self, state="readonly", textvariable=self.text_city, width=30)
+        self.entry_city = ttk.Entry(self, textvariable=self.text_city, width=30)
         self.entry_city.grid(column=1, row=0, padx=g_padx, columnspan=2)
 
         self.text_date = tk.StringVar()
         self.text_date.set(values[2])
-        self.entry_date = ttk.Entry(self, state="readonly", textvariable=self.text_date, width=30)
+        self.entry_date = ttk.Entry(self, textvariable=self.text_date, width=30)
         self.entry_date.grid(column=1, row=1, padx=g_padx, columnspan=2)
+
+        if edit:
+            self.entry_city.config(state="readonly")
+            self.entry_date.config(state="readonly")
 
         self.text_max_temp = tk.StringVar()
         self.text_max_temp.set(values[3])
@@ -88,8 +95,11 @@ class EditDialog(tk.Toplevel):
         self.wait_window(self)
 
     def on_ok_button(self):
-        self.exit_code = 1
-        self.destroy()
+        if re.match(r'^(3[0-1]|[0-2]?[1-9])(\.|\-)(1[0-2]|0?[1-9])(\.|\-)([1-2]\d{3})$', self.entry_date.get()):
+            self.exit_code = 1
+            self.destroy()
+        else:
+            msg.showerror('Ошибка ввода данных', 'Неверный формат даты. Используйте ДД.ММ.ГГГГ или ДД-ММ-ГГГГ.')
 
     def on_cancel_button(self):
         self.destroy()
