@@ -24,17 +24,10 @@ class Data:
 
     def get_data(self, filters):
         """
-<<<<<<< HEAD
-        Возвращает словарь из датафреймов, которые соответствуют фильтрам
-
-        :param filters: список из фильтров
-        :return: словарь датафреймов вида {город: датафрейм}
-=======
         Возвращает срез данных, подходящий по фильтрам
 
         :param filters: список фильтров
         :return: словарь из DataFrame
->>>>>>> 270621729ebeeace6f99cfb36464da68d1f90cc9
         """
         dictdf = {}
         if filters[0] == 'Все':
@@ -54,16 +47,11 @@ class Data:
                     0]].index.year > 0)]
         return dictdf
 
-<<<<<<< HEAD
 
     def getcities(self):
         """
         Возвращает список имеющихся в базе данных городов
-=======
-    def getcities(self):
-        """
         Возвращает список городов
->>>>>>> 270621729ebeeace6f99cfb36464da68d1f90cc9
         :return: список городов
         """
         return self.cityindex.index.to_list()
