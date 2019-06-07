@@ -24,8 +24,6 @@ class Gui:
     """
     Основной класс главного окна программы,
     отвечающий за отображение информацци о базе данных и графиков
-
-    :ivar day Button:
     """
 
     def __init__(self, data):
@@ -210,6 +208,9 @@ class Gui:
         self.root.mainloop()
 
     def show_analitics(self):
+        """
+        Выводит результаты анализа на экран
+        """
         self.graph.get_tk_widget().grid_forget()
         self.msge.grid(row=0, column=0)
         self.msge.config(text=self.analitics)

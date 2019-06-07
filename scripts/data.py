@@ -24,17 +24,10 @@ class Data:
 
     def get_data(self, filters):
         """
-<<<<<<< HEAD
         Возвращает словарь из датафреймов, которые соответствуют фильтрам
 
         :param filters: список из фильтров
         :return: словарь датафреймов вида {город: датафрейм}
-=======
-        Возвращает срез данных, подходящий по фильтрам
-
-        :param filters: список фильтров
-        :return: словарь из DataFrame
->>>>>>> 270621729ebeeace6f99cfb36464da68d1f90cc9
         """
         dictdf = {}
         if filters[0] == 'Все':
@@ -54,16 +47,10 @@ class Data:
                     0]].index.year > 0)]
         return dictdf
 
-<<<<<<< HEAD
-
     def getcities(self):
         """
         Возвращает список имеющихся в базе данных городов
-=======
-    def getcities(self):
-        """
-        Возвращает список городов
->>>>>>> 270621729ebeeace6f99cfb36464da68d1f90cc9
+
         :return: список городов
         """
         return self.cityindex.index.to_list()
@@ -71,6 +58,7 @@ class Data:
     def getdate(self):
         """
         Возвращает список из минимальной и максимальной дат во всей базе данных
+
         :return: [самая ранняя дата, самая поздняя дата]
         """
         return [self.mindate, self.maxdate]
@@ -78,6 +66,7 @@ class Data:
     def save(self, route):
         """
         сохраняет базу данных по указанному маршруту
+
         :param route: Путь, где лежит основной файл базы данных
         """
         direct = '/'.join(route.split('/')[:-1]) + '/'
@@ -110,6 +99,7 @@ class Data:
     def load_data(self, route):
         """
         Загружает основной файл и сопутствующие ему файлы
+
         :param route: Путь основного файла
         """
         del self.dictdf
@@ -122,13 +112,13 @@ class Data:
                 {row[0]: pd.read_csv(direct + id_str + ".csv", encoding="utf-8", sep=";").set_index('date')})
             self.dictdf[row[0]].index = pd.to_datetime(self.dictdf[row[0]].index)
 
-        # print(self.dictdf)
 
     def insert_row(self, iid, values):
         """
         Вставляет новый ряд данных и, если необходимо, дополняет список городов
+
         :param iid: координаты новой ячейки данных
-                values: значения ячейки
+        :param values: значения ячейки
         """
         print(dt.datetime.strptime(str(iid.split()[0]), '%Y-%m-%d'))
 
@@ -154,23 +144,19 @@ class Data:
     def update_row(self, iid, values):
         """
         Изменяет ячейку в базе данных
+
         :param iid: координаты ячейки данных
-                values: новые значения ячейки
-                """
-        # print(values)
-        # print(iid)
-        # print(iid.split())
+        :param values: новые значения ячейки
+        """
+
         ddf = pd.DataFrame.from_dict({0: [iid.split()[0]] + values[2:]}, orient='index',
                                      columns=["date", "tempMax", "tempMin", "press", "wind", "falls"]).set_index('date')
-        # df = pd.read_csv('../data/{0:03d}.csv'.format(self.cityindex.loc[iid.split()[1]]['ID']),
-        # encoding="utf-8", sep=";", index_col='date')
         self.dictdf[iid.split()[1]].update(ddf)
-        # df.to_csv('../data/{0:03d}.csv'.format(self.cityindex.loc[iid.split()[1]]['ID']),
-        # encoding="utf-8", sep=";", index=False)
 
     def delete_row(self, item):
         """
         Удаляет ряд из базы данных
+
         :param item: координаты ряда
         """
         print(item)

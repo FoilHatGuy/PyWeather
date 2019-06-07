@@ -8,7 +8,16 @@ g_pady = 8
 
 
 class EditDialog(tk.Toplevel):
+    """
+    Диалоговое окно, используемое для редактирования и добавления рядо данных
+    """
     def __init__(self, root, values, edit):
+        """
+        Конструктор диалогового окна
+        :param root: родительское окно
+        :param values: список из значений (в случае редактирования)
+        :param edit: определяет, будет ли окно использовано для редактирования или для добавления ряда
+        """
         tk.Toplevel.__init__(self, root)
 
         self.geometry("+"+str(root.winfo_x()-25)+"+"+str(root.winfo_y()+150))
@@ -95,6 +104,10 @@ class EditDialog(tk.Toplevel):
         self.wait_window(self)
 
     def on_ok_button(self):
+        """
+        Обработчик нажатия кнопки OK. Проверяет правильость
+        введенной даты с помощью регулярного выражения.
+        """
         if re.match(r'^(3[0-1]|[0-2]?[1-9])(\.|\-)(1[0-2]|0?[1-9])(\.|\-)([1-2]\d{3})$', self.entry_date.get()):
             self.exit_code = 1
             self.destroy()
@@ -102,8 +115,15 @@ class EditDialog(tk.Toplevel):
             msg.showerror('Ошибка ввода данных', 'Неверный формат даты. Используйте ДД.ММ.ГГГГ или ДД-ММ-ГГГГ.')
 
     def on_cancel_button(self):
+        """
+        Обработчик нажатия кнопки Отмена
+        """
         self.destroy()
 
     def get_values(self):
+        """
+        Возвращает полученные значения
+        :return: список данных полей
+        """
         return [self.text_city.get(), self.text_date.get(), self.text_max_temp.get(), self.text_min_temp.get(),
                 self.text_press.get(), int(self.text_wind.get()), int(self.text_falls.get())]
