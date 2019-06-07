@@ -157,20 +157,18 @@ class Gui:
 
         save_butt = ttk.Button(editor, text="Save figure", command=self.savefigure)
         save_butt.grid(row=5, column=0, pady=8)
+
+        self.column_combo = ttk.Combobox(editor, values=['tempMax', 'tempMin', 'press'], state='readonly')
+        self.column_combo.current(0)
+        self.column_combo.bind('<<ComboboxSelected>>', lambda event: self.askdata(list(
+            map(lambda x: x.get(), [self.cityfilter, self.dayfilter, self.monthfilter, self.yearfilter])))) # the same as in update button. It can be removed
+        self.column_combo.grid(row=6, column=0, pady=8)
         # </editor-fold>
 
         # <editor-fold desc="Graphs area">
         self.graph_area = ttk.Frame(self.root, relief=self.view, borderwidth=5, height=100, width=100)
         self.graph_area.pack(anchor='s', fill='y')
 
-        # but1 = ttk.Button(bottom, text="This is not a button")
-        # but1.grid(row=0, column=0, pady=8)
-        # but2 = ttk.Button(bottom, text="This one too")
-        # but2.grid(row=1, column=0, pady=8)
-        # but3 = ttk.Button(bottom, text="Don't press me")
-        # but3.grid(row=2, column=0, pady=8)
-        # self.graph = tk.Label(graph_area)
-        # self.graph.grid(row=0, column=0)
 
         # </editor-fold>
         self.fig = plt.Figure()
@@ -268,8 +266,6 @@ class Gui:
         self.msge.grid_forget()
         self.graph.get_tk_widget().grid(row=0, column=0)
         df = self.pointer.my_get_data(filt)
-        # print(df)
-        data = 'tempMax'
         self.table.delete(*self.table.get_children())
         for city in df.keys():
             for row in df[city].to_dict('index').items():
@@ -281,11 +277,12 @@ class Gui:
         print(filt)
 
         # <editor-fold desc="diagram">
+        column = self.column_combo.current()
         graph_drawed = False
         # <editor-fold desc="BAR: All cities in one day">
         if filt[0] == 'Все' and filt[1] != 'Все' and filt[2] != 'Все' and filt[3] != 'Все':
             # cities = df.keys()
-            values = [x.loc[filt[3] + "-" + filt[2] + "-" + filt[1]][data] for x in df.values()]
+            values = [x.loc[filt[3] + "-" + filt[2] + "-" + filt[1]][column] for x in df.values()]
 
             x = np.arange(len(df.keys()))
             if self.plot:
@@ -307,7 +304,7 @@ class Gui:
 
             for row in df[filt[0]].iterrows():
                 dates.append(row[0].strftime("%d.%m.%Y"))
-                values.append(row[1][data])
+                values.append(row[1][column])
 
             # print(dates)
             # print(values)
@@ -319,7 +316,7 @@ class Gui:
                 self.fig.clf()
             bb = self.fig.add_subplot(111)
             self.plot = bb.plot(x, values, 'o-')
-            bb.set_title('Данные по одному месяцу в г.', filt[0])
+            bb.set_title('Данные по одному месяцу в г.'+filt[0])
             bb.set_xticks(x, False)
             bb.set_xticklabels(dates, rotation='vertical')
             self.fig.tight_layout()
@@ -337,7 +334,7 @@ class Gui:
                 # print(df[filt[0]][df[filt[0]].index.month == month][data].median())
                 # print(df[filt[0]].index.strftime("%m.%Y"))
                 dates.append(df[filt[0]][df[filt[0]].index.month == month].index[0].strftime("%m.%Y"))
-                values.append(df[filt[0]][df[filt[0]].index.month == month][data].median())
+                values.append(df[filt[0]][df[filt[0]].index.month == month][column].median())
 
             # print(dates)
             # print(values)
@@ -373,7 +370,7 @@ class Gui:
                 # print(df[city].index.strftime("%m.%Y"))
                 dates.append(df[city][df[city].index.month == date.month].index[0].strftime("%m.%Y"))
                 values.append(df[city][(df[city].index.month == date.month) &
-                                       (df[city].index.year == date.year)][data].median())
+                                       (df[city].index.year == date.year)][column].median())
                 date += relativedelta(months=1)
 
             # print(dates)
@@ -401,7 +398,7 @@ class Gui:
                 # print(df[city][df[city].index.month == month][data].median())
                 # print(df[city].index.strftime("%m.%Y"))
                 dates.append(city)
-                values.append(df[city][data].mean())
+                values.append(df[city][column].mean())
 
             x = np.arange(len(df.keys()))
             if self.plot:
