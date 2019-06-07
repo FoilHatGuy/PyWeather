@@ -318,7 +318,7 @@ class Gui:
         self.msge.grid_forget()
         self.msge.config(text=self.inability_msg)
         self.graph.get_tk_widget().grid(row=0, column=0)
-        df = self.pointer.my_get_data(filt)
+        df = self.pointer.get_data(filt)
         # print(df)
         analisys = [-275, 10000, -275, 10000, -275, 10000]
         idx = [[], [], [], [], [], [], [], []]

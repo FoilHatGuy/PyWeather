@@ -22,12 +22,12 @@ class Data:
 
         # print(self.dictdf)
 
-    def my_get_data(self, filters):
+    def get_data(self, filters):
         """
-        Returns dict of dataframes with cities which match to filters
+        Возвращает словарь из датафреймов, которые соответствуют фильтрам
 
-        :param filters: list of filters
-        :return: dict of dataframes
+        :param filters: список из фильтров
+        :return: словарь датафреймов вида {город: датафрейм}
         """
         dictdf = {}
         if filters[0] == 'Все':
@@ -47,29 +47,12 @@ class Data:
                     0]].index.year > 0)]
         return dictdf
 
-    #
-    # def getdata(self, filters):
-    #     # print(filters)
-    #     dictdf = {filters[0]: {'city': self.cityindex.loc[filters[0]]}} if filters[
-    #                                                                           0] != 'Все' else self.cityindex.to_dict(
-    #         'index')
-    #     # df = pd.DataFrame(columns=['tempMax', 'tempMin', 'press', 'wind', 'falls'])
-    #     #print('dictdf: ', dictdf)
-    #     df = {}
-    #     for x in dictdf.keys():
-    #         # print(df)
-    #         buf = pd.read_csv('../data/{0:03d}.csv'.format(self.cityindex.loc[x]['ID']), encoding="utf-8", sep=";",
-    #                           index_col='date')
-    #         # print(buf)
-    #         buf.index = pd.to_datetime(buf.index)
-    #         ioi = buf[(buf.index.day == int(filters[1]) if filters[1] != 'Все' else True) &
-    #                   (buf.index.month == int(filters[2]) if filters[2] != 'Все' else True) &
-    #                   (buf.index.year == int(filters[3]) if filters[3] != 'Все' else buf.index.year > 0)]
-    #         # print(ioi)
-    #         df.update({x: ioi})
-    #     return df
 
     def getcities(self):
+        """
+        Возвращает список имеющихся в базе данных городов
+        :return: список городов
+        """
         return self.cityindex.index.to_list()
 
     def getdate(self):
