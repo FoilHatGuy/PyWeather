@@ -1,17 +1,16 @@
 import datetime as dt
+import os
 import re
 import tkinter as tk
 import tkinter.filedialog as fd
 import tkinter.messagebox as msg
 import tkinter.ttk as ttk
-from tkinter import PhotoImage
-import os
-import pandas as pd
-from dateutil.relativedelta import relativedelta
 
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+from dateutil.relativedelta import relativedelta
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 from scripts.data import Data
 from scripts.editdialog import EditDialog
@@ -140,23 +139,23 @@ class Gui:
         editor = ttk.Frame(top, relief=self.view, borderwidth=5)
         editor.grid(column=1, row=0, columnspan=3)
 
-        self.insert_but = ttk.Button(editor, text="Insert row", command=self.insert)
+        self.insert_but = ttk.Button(editor, text="Вставить ряд", command=self.insert)
         self.insert_but.grid(row=0, column=0, pady=8)
 
-        self.edit_button = ttk.Button(editor, text="Edit row", command=self.editrow)
+        self.edit_button = ttk.Button(editor, text="Изменить ряд", command=self.editrow)
         self.edit_button.grid(row=1, column=0, pady=8)
 
-        self.delete_but = ttk.Button(editor, text="Delete row", command=self.delete)
+        self.delete_but = ttk.Button(editor, text="Удалить ряд", command=self.delete)
         self.delete_but.grid(row=2, column=0, pady=8)
 
-        save_butt = ttk.Button(editor, text="Save to disk", command=self.save)
-        save_butt.grid(row=3, column=0, pady=8)
+        save_but = ttk.Button(editor, text="Сохранитьданные", command=self.save)
+        save_but.grid(row=3, column=0, pady=8)
 
-        delete_but = ttk.Button(editor, text="Load database", command=self.load)
+        delete_but = ttk.Button(editor, text="Загрузить данные", command=self.load)
         delete_but.grid(row=4, column=0, pady=8)
 
-        save_butt = ttk.Button(editor, text="Save figure", command=self.savefigure)
-        save_butt.grid(row=5, column=0, pady=8)
+        savefig_but = ttk.Button(editor, text="Сохранить график", command=self.savefigure)
+        savefig_but.grid(row=6, column=0, pady=8)
         # </editor-fold>
 
         # <editor-fold desc="Graphs area">
@@ -173,9 +172,19 @@ class Gui:
         # self.graph.grid(row=0, column=0)
 
         # </editor-fold>
-        self.fig = plt.Figure()
-        self.msge = tk.Label(self.graph_area, text='Невозможно построить график')
+        self.analitics = ''
+        self.inability_msg = 'Невозможно построить график'
+        self.analitics_msg = """                В данном срезе данных
+        Самый холодный город: {0}, дата: {1}, температура опустилась до {2}
+        Самый теплый город: {3}, дата: {4}, температура поднялась до {5}
+        Город с наибольшим атмосферным давлением: {6}, дата: {7}, Давление: {8}
+        Город с наименьшим атмосферным давлением: {9}, дата: {10}, Давление: {11}
+        Город с наибольшим количеством осадков: {12}, дата: {13}, Давление: {14}
+        Город с наименьшим количеством осадков: {15}, дата: {16}, Давление: {17}
+        """
+        self.msge = tk.Label(self.graph_area, text=self.inability_msg, justify='left')
         self.msge.grid(row=0, column=0)
+        self.fig = plt.Figure()
         self.plot = self.fig.add_subplot(111)
         self.graph = FigureCanvasTkAgg(self.fig, master=self.graph_area)
         self.graph.get_tk_widget().grid(row=0, column=0)
@@ -183,8 +192,16 @@ class Gui:
 
         self.askdata(['Все', 'Все', 'Все', 'Все'])
 
+        analitics_but = ttk.Button(editor, text="Текстовый отчет", command=self.show_analitics)
+        analitics_but.grid(row=5, column=0, pady=8)
+
         self.root.update()
         self.root.mainloop()
+
+    def show_analitics(self):
+        self.graph.get_tk_widget().grid_forget()
+        self.msge.grid(row=0, column=0)
+        self.msge.config(text=self.analitics)
 
     def savefigure(self):
         if not self.imageId:
@@ -266,9 +283,38 @@ class Gui:
 
     def askdata(self, filt):
         self.msge.grid_forget()
+        self.msge.config(text=self.inability_msg)
         self.graph.get_tk_widget().grid(row=0, column=0)
         df = self.pointer.my_get_data(filt)
         # print(df)
+        analisys = [-275, 10000, -275, 10000, -275, 10000]
+        idx = [[], [], [], [], [], [], [], []]
+        for city in df.keys():
+            data = [df[city]['tempMax'].idxmax(), df[city]['tempMin'].idxmin(),
+                    df[city]['press'].idxmax(), df[city]['press'].idxmin(),
+                    df[city]['falls'].idxmax(), df[city]['falls'].idxmin()]
+            # print(data[0])
+            # print(analisys[0])
+            (idx[0], analisys[0]) = ([city, data[0]], df[city].loc[data[0]]['tempMax']) if df[city].loc[data[0]]['tempMax'] > analisys[0] else (idx[0], analisys[0])
+            (idx[1], analisys[1]) = ([city, data[1]], df[city].loc[data[1]]['tempMin']) if df[city].loc[data[1]]['tempMin'] < analisys[1] else (idx[1], analisys[1])
+            (idx[2], analisys[2]) = ([city, data[2]], df[city].loc[data[2]]['press']) if df[city].loc[data[2]]['press'] > analisys[2] else (idx[2], analisys[2])
+            (idx[3], analisys[3]) = ([city, data[3]], df[city].loc[data[3]]['press']) if df[city].loc[data[3]]['press'] < analisys[3] else (idx[3], analisys[3])
+            (idx[4], analisys[4]) = ([city, data[4]], df[city].loc[data[4]]['falls']) if df[city].loc[data[4]]['falls'] > analisys[4] else (idx[4], analisys[4])
+            (idx[5], analisys[5]) = ([city, data[5]], df[city].loc[data[5]]['falls']) if df[city].loc[data[5]]['falls'] < analisys[5] else (idx[5], analisys[5])
+            # map(lambda a: [a[0], dt.date(a[1].years, a[1].months, a[1].days)], idx)
+        print(idx, analisys, sep='\n\n')
+        analisys = list(zip(idx, analisys))
+        datalist = []
+        for x in analisys:
+            datalist += [x[0][0], dt.datetime.strftime(x[0][1], '%d.%m.%Y'), x[1]]
+            # for x in range(0, len(data) - 1, 2):
+            #     print(x)
+            #     if analisys[x] < data[x]:
+            #         analisys[x] = data[x]
+            #     if analisys[x+1] > data[x+1]:
+            #         analisys[x+1] = data[x+1]
+        print(datalist)
+        self.analitics = self.analitics_msg.format(*datalist)
         data = 'tempMax'
         self.table.delete(*self.table.get_children())
         for city in df.keys():
@@ -278,10 +324,9 @@ class Gui:
                 # print(row)
                 self.table.insert("", "end", iid=str(row[0]) + ' ' + city, text=row[0].strftime("%d.%m.%Y"),
                                   values=[city, row[0].strftime("%d.%m.%Y")] + list(row[1].values()))
-        print(filt)
+        # print(filt)
 
         # <editor-fold desc="diagram">
-        graph_drawed = False
         # <editor-fold desc="BAR: All cities in one day">
         if filt[0] == 'Все' and filt[1] != 'Все' and filt[2] != 'Все' and filt[3] != 'Все':
             # cities = df.keys()
@@ -294,9 +339,9 @@ class Gui:
             # print(bb)
             self.plot = bb.bar(x, values)
             bb.set_xticklabels(df.keys(), rotation='vertical')
-            bb.set_title(r'Погода в городах России на {0:02}.{1:02}.{2:04}'.format(int(filt[1]), int(filt[2]), int(filt[3])))
+            bb.set_title(
+                r'Погода в городах России на {0:02}.{1:02}.{2:04}'.format(int(filt[1]), int(filt[2]), int(filt[3])))
             self.fig.tight_layout()
-            graph_drawed = True
             self.graph.draw()
         # </editor-fold>
 
@@ -324,7 +369,6 @@ class Gui:
             bb.set_xticklabels(dates, rotation='vertical')
             self.fig.tight_layout()
             self.graph.draw()
-            graph_drawed = True
 
             # One month of year in one city
         # </editor-fold>
@@ -350,7 +394,7 @@ class Gui:
             bb = self.fig.add_subplot(111)
             self.plot = bb.plot(x, values, 'o-')
             print(filt[0])
-            bb.set_title('Годовое изменение погоды в г. '+filt[0])
+            bb.set_title('Годовое изменение погоды в г. ' + filt[0])
             bb.set_xticks(x, False)
             bb.set_xticklabels(dates, rotation='vertical')
             self.fig.tight_layout()
@@ -371,7 +415,9 @@ class Gui:
             while self.pointer.getdate()[0] <= date <= self.pointer.getdate()[1]:
                 # print(df[city][df[city].index.month == month][data].median())
                 # print(df[city].index.strftime("%m.%Y"))
-                dates.append(df[city][df[city].index.month == date.month].index[0].strftime("%m.%Y"))
+                # print(df[city][df[city].index.month == date.month].index[0].strftime("%m.%Y"))
+                dates.append(df[city][(df[city].index.month == date.month) &
+                                      (df[city].index.year == date.year)].index[0].strftime("%m.%Y"))
                 values.append(df[city][(df[city].index.month == date.month) &
                                        (df[city].index.year == date.year)][data].median())
                 date += relativedelta(months=1)
@@ -411,7 +457,6 @@ class Gui:
             self.plot = bb.bar(x, values)
             bb.set_xticklabels(df.keys(), rotation='vertical')
             self.fig.tight_layout()
-            graph_drawed = True
             self.graph.draw()
         # </editor-fold>
 
@@ -420,16 +465,6 @@ class Gui:
                 self.fig.clf()
             self.graph.get_tk_widget().grid_forget()
             self.msge.grid(row=0, column=0)
-            pass
-        # </editor-fold>
-
-
-        if graph_drawed:
-            # plt.savefig("../graphics/tmp.png")
-            #
-            # self.photo = PhotoImage(file="../graphics/tmp.png")
-            # self.graph.configure(image=self.photo, width=700, height=500)
-            pass
 
         # </editor-fold>
 

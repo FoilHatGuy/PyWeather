@@ -69,8 +69,11 @@ def create_db(table_body):
     #     df = df.append(l_row, ignore_index=True)
     # print(list(table_body))
     # print(list(map(lambda x: dict(zip(columns, list(map(lambda y: -200 if y.text is None else y.text, list(x))))), table_body)))
+    # print(list(map(lambda x: x.text, list(table_body[0]))))
+    # print(list(table_body))
+    # print(list(map(lambda x: x.text, )))
     df = df.append(list(
-        map(lambda x: dict(zip(columns, list(map(lambda y: -200 if y.text is None else y.text, list(x))))),
+        map(lambda x: dict(zip(columns, list(map(lambda y: -200 if y.text is None else y.text, list(list(x[:3])+list(x[4:-1])))))),
             table_body)), ignore_index=True)
     # l_row = {"date": row[0].text, "tempMax": str(row[1].text), "tempMin": str(row[2].text),
     #          "press": str(row[4].text), "wind": str(row[5].text), "falls": str(row[6].text)}
@@ -111,7 +114,7 @@ for item in stations:
         df = pd.concat([df, create_db(html[1][2][5][1])], ignore_index=True, sort=False)
     # print(df['date'])
     df['date'] = pd.to_datetime(df['date'], format='%d.%m.%Y')
-    print(df)
+    # print(df)
     df.to_csv('../data/' + '{0:03}'.format(idx) + '.csv', sep=";", index=False, encoding='utf-8')
 
     indx = indx.append(pd.DataFrame([[idx, item[1], min(set(df['date'])), max(set(df['date']))]], columns=['ID', 'city', 'minDate', 'maxDate']))
