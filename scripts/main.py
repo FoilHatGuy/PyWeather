@@ -216,7 +216,7 @@ class Gui:
 
     def savefigure(self):
         """
-        Запрашивает у пользователя путь и сохраняет текущую диаграмму в файл
+        Сохраняет текущую диаграмму в файл
         """
         if not self.imageId:
             files = [f for f in os.listdir('../graphics') if

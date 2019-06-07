@@ -7,7 +7,7 @@ import pandas as pd
 
 class Data:
     """
-    Класс базы данных. Хз.
+    Класс базы данных. Выполняет функции и действия по отношению к данным.
     """
     def __init__(self):
         self.dictdf = {}
@@ -24,10 +24,10 @@ class Data:
 
     def my_get_data(self, filters):
         """
-        Returns dict of dataframes with cities which match to filters
+        Возвращает срез данных, подходящий по фильтрам
 
-        :param filters: list of filters
-        :return: dict of dataframes
+        :param filters: список фильтров
+        :return: словарь из DataFrame
         """
         dictdf = {}
         if filters[0] == 'Все':
@@ -47,35 +47,25 @@ class Data:
                     0]].index.year > 0)]
         return dictdf
 
-    #
-    # def getdata(self, filters):
-    #     # print(filters)
-    #     dictdf = {filters[0]: {'city': self.cityindex.loc[filters[0]]}} if filters[
-    #                                                                           0] != 'Все' else self.cityindex.to_dict(
-    #         'index')
-    #     # df = pd.DataFrame(columns=['tempMax', 'tempMin', 'press', 'wind', 'falls'])
-    #     #print('dictdf: ', dictdf)
-    #     df = {}
-    #     for x in dictdf.keys():
-    #         # print(df)
-    #         buf = pd.read_csv('../data/{0:03d}.csv'.format(self.cityindex.loc[x]['ID']), encoding="utf-8", sep=";",
-    #                           index_col='date')
-    #         # print(buf)
-    #         buf.index = pd.to_datetime(buf.index)
-    #         ioi = buf[(buf.index.day == int(filters[1]) if filters[1] != 'Все' else True) &
-    #                   (buf.index.month == int(filters[2]) if filters[2] != 'Все' else True) &
-    #                   (buf.index.year == int(filters[3]) if filters[3] != 'Все' else buf.index.year > 0)]
-    #         # print(ioi)
-    #         df.update({x: ioi})
-    #     return df
-
     def getcities(self):
+        """
+        Возвращает список городов
+        :return: список городов
+        """
         return self.cityindex.index.to_list()
 
     def getdate(self):
+        """
+        Возвращает список из минимальной и максимальной дат во всей базе данных
+        :return: [самая ранняя дата, самая поздняя дата]
+        """
         return [self.mindate, self.maxdate]
 
     def save(self, route):
+        """
+        сохраняет базу данных по указанному маршруту
+        :param route: Путь, где лежит основной файл базы данных
+        """
         direct = '/'.join(route.split('/')[:-1]) + '/'
         files = [f for f in os.listdir(direct) if
                  os.path.isfile(direct + f) and not re.match(r'\d\d\d\.csv', f) and re.match(r'.*\.csv', f)]
@@ -105,9 +95,8 @@ class Data:
 
     def load_data(self, route):
         """
-        Loads 001.csv ... xxx.csv to dict of dataframes
-
-        :return:
+        Загружает основной файл и сопутствующие ему файлы
+        :param route: Путь основного файла
         """
         del self.dictdf
         self.dictdf = {}
@@ -122,6 +111,11 @@ class Data:
         # print(self.dictdf)
 
     def insert_row(self, iid, values):
+        """
+        Вставляет новый ряд данных и, если необходимо, дополняет список городов
+        :param iid: координаты новой ячейки данных
+                values: значения ячейки
+        """
         print(dt.datetime.strptime(str(iid.split()[0]), '%Y-%m-%d'))
 
         ddf = pd.DataFrame.from_dict({0: [iid.split()[0]] + values[2:]}, orient='index',
@@ -144,6 +138,11 @@ class Data:
             self.dictdf[iid.split()[1]].update(ddf)
 
     def update_row(self, iid, values):
+        """
+        Изменяет ячейку в базе данных
+        :param iid: координаты ячейки данных
+                values: новые значения ячейки
+                """
         # print(values)
         # print(iid)
         # print(iid.split())
@@ -156,6 +155,10 @@ class Data:
         # encoding="utf-8", sep=";", index=False)
 
     def delete_row(self, item):
+        """
+        Удаляет ряд из базы данных
+        :param item: координаты ряда
+        """
         print(item)
         self.dictdf[item.split()[1]] = self.dictdf[item.split()[1]].drop(
             dt.datetime.strptime(item.split()[0], '%Y-%m-%d'), axis='index')
