@@ -6,6 +6,9 @@ import pandas as pd
 
 
 class Data:
+    """
+    Класс базы данных. Хз.
+    """
     def __init__(self):
         self.dictdf = {}
         self.cityindex = pd.DataFrame()

@@ -21,7 +21,18 @@ from scripts.editdialog import EditDialog
 
 
 class Gui:
+    """
+    Основной класс главного окна программы,
+    отвечающий за отображение информацци о базе данных и графиков
+
+    :ivar day Button:
+    """
+
     def __init__(self, data):
+        """
+        Конструктор калсса Gui. Хз, что тут писать.
+        :param data: База данных - экземпляр класса Data
+        """
         self.imageId = None
         self.view = 'groove'
         self.pointer = data
@@ -31,8 +42,7 @@ class Gui:
 
         def daysupdatecounter(dump):
             """
-
-            :return:
+            Настраивает фильтр дней в зависимости от месяца
             """
             # print(days.get(), month.get(), year.get())
             if self.monthfilter.get() == 'Все':
@@ -185,6 +195,9 @@ class Gui:
         self.root.mainloop()
 
     def savefigure(self):
+        """
+        Запрашивает у пользователя путь и сохраняет текущую диаграмму в файл
+        """
         if not self.imageId:
             files = [f for f in os.listdir('../graphics') if
                      os.path.isfile('../graphics' + f) and not re.match(r'\d\d\d\.png', f)]
@@ -200,6 +213,9 @@ class Gui:
         self.fig.savefig('../graphics/{0:03}.png'.format(self.imageId))
 
     def load(self):
+        """
+        Загружает выбранную пользователем базу данных
+        """
         route = fd.askopenfilename()
         print(route)
         if not re.match(r'.*\d{3}\.csv', route):
@@ -211,6 +227,9 @@ class Gui:
             map(lambda x: x.get(), [self.cityfilter, self.dayfilter, self.monthfilter, self.yearfilter])))
 
     def insert(self):
+        """
+        Вставляет новый ряд данных после выбранного пользователем
+        """
         if self.table.focus() != '':
             self.edit_button.config(state=tk.DISABLED)
             curr_item = self.table.focus()
@@ -231,6 +250,9 @@ class Gui:
                 self.pointer.insert_row(curr_item, new_values)
 
     def editrow(self):
+        """
+        Редактирует выбранный ряд таблицы
+        """
         if self.table.focus() != '':
             self.edit_button.config(state=tk.DISABLED)
             curr_item = self.table.focus()
@@ -246,6 +268,9 @@ class Gui:
                 self.pointer.update_row(curr_item, new_values)
 
     def save(self):
+        """
+        Сохраняет базу данных
+        """
         route = fd.asksaveasfilename(title="Select file to save",
                                      filetypes=(("csv files", ".csv"),
                                                 ("all files", ".*")),
@@ -257,12 +282,19 @@ class Gui:
             msg.showerror('Недопустимое имя', "Имя файла имеет недопустимы формат. Пожалуйста, введите другое имя.")
 
     def delete(self):
+        """
+        Удаляет выбранный ряд таблицы
+        """
         if self.table.focus() != '':
             curr_item = self.table.focus()
             self.table.delete(curr_item)
             self.pointer.delete_row(curr_item)
 
     def askdata(self, filt):
+        """
+        Запрашивает данные из базы на основе фильтров, выводит их в таблицу и рисует график
+        :param filt: Список фильтров
+        """
         self.msge.grid_forget()
         self.graph.get_tk_widget().grid(row=0, column=0)
         df = self.pointer.my_get_data(filt)
