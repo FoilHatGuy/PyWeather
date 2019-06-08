@@ -367,7 +367,7 @@ class Gui:
                 # print(row)
                 self.table.insert("", "end", iid=str(row[0]) + ' ' + city, text=row[0].strftime("%d.%m.%Y"),
                                   values=[city, row[0].strftime("%d.%m.%Y")] + list(row[1].values()))
-        # print(filt)
+
 
         # <editor-fold desc="diagram">
         column = self.column_dict[self.column.get()]
@@ -392,7 +392,7 @@ class Gui:
                     r'Погода в городах России на {0:02}.{1:02}.{2:04}'.format(int(filt[1]), int(filt[2]), int(filt[3])))
                 self.fig.tight_layout()
                 self.graph.draw()
-            # </editor-fold>
+        # </editor-fold>
 
             # <editor-fold desc="PLOT: One month of year in one city">
             elif filt[0] != 'Все' and filt[1] == 'Все' and filt[2] != 'Все' and filt[3] != 'Все':
