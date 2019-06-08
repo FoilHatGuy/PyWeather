@@ -12,7 +12,7 @@ class Data:
     def __init__(self):
         self.dictdf = {}
         self.cityindex = pd.DataFrame()
-        self.load_data("../data/index.csv")
+        self.load_data("../Data/index.csv")
         self.mindate = dt.date(3000, 1, 1)
         self.maxdate = dt.date(1000, 1, 1)
         self.cityindex['minDate'] = pd.to_datetime(self.cityindex['minDate'], format='%Y-%m-%d')

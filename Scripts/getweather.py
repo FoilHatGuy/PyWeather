@@ -89,13 +89,13 @@ stations = [['325830', 'Петропавловск-Камчатский'], ['319
             ['349290', 'Краснодар'], ['276120', 'Москва'], ['260630', 'Санкт-Петербург'], ['225500', 'Архангельск'],
             ['221130', 'Мурманск'], ['267020', 'Калининград']]
 
-files = [f for f in os.listdir('../data') if
-         os.path.isfile('../data/' + f) and not re.match(r'\d\d\d\.csv', f) and re.match(r'.*\.csv', f)]
+files = [f for f in os.listdir('../Data') if
+         os.path.isfile('../Data/' + f) and not re.match(r'\d\d\d\.csv', f) and re.match(r'.*\.csv', f)]
 indx = DataFrame(columns=['ID', 'city'])
 
 if files:
     for file in files:
-        indx = indx.append(pd.read_csv("../data/" + file, encoding="utf-8", sep=";"), sort=False)
+        indx = indx.append(pd.read_csv("../Data/" + file, encoding="utf-8", sep=";"), sort=False)
     print(indx)
     idx = max(indx['ID'].to_list())
 else:
@@ -131,13 +131,13 @@ for item in stations:
     df.drop_duplicates('date', keep='first', inplace=True)
     print(df[df.duplicated(keep=False)])
     print(df.shape)
-    df.to_csv('../data/' + '{0:03}'.format(idx) + '.csv', sep=";", index=False, encoding='utf-8')
+    df.to_csv('../Data/' + '{0:03}'.format(idx) + '.csv', sep=";", index=False, encoding='utf-8')
     # print(df[df.duplicated()])
     indx = indx.append(pd.DataFrame([[idx, item[1], min(set(df['date'])), max(set(df['date']))]], columns=['ID', 'city', 'minDate', 'maxDate']))
 
 # indx = indx.set_index('ID')
 print(indx)
-indx.to_csv('../data/index.csv', sep=";", encoding='utf-8', index=False)
+indx.to_csv('../Data/index.csv', sep=";", encoding='utf-8', index=False)
 
 
 

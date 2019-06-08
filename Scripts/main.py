@@ -1,23 +1,22 @@
 import datetime as dt
+import os
 import re
 import tkinter as tk
 import tkinter.filedialog as fd
 import tkinter.messagebox as msg
 import tkinter.ttk as ttk
-from tkinter import PhotoImage
-import os
-import pandas as pd
-from dateutil.relativedelta import relativedelta
 
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+from dateutil.relativedelta import relativedelta
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-from scripts.data import Data
-from scripts.editdialog import EditDialog
+from Library.data import Data
+from Library.editdialog import EditDialog
 
 
-# from scripts.insertdialog import InsertDialog
+# from Scripts.insertdialog import InsertDialog
 
 
 class Gui:
@@ -164,26 +163,27 @@ class Gui:
         delete_but.grid(row=4, column=0, pady=8)
 
         savefig_but = ttk.Button(editor, text="Сохранить график", command=self.savefigure)
-        savefig_but.grid(row=7, column=0, pady=8)
+        savefig_but.grid(row=6, column=0, pady=8)
 
-        save_butt = ttk.Button(editor, text="Save figure", command=self.savefigure)
-        save_butt.grid(row=6, column=0, pady=8)
+        # save_butt = ttk.Button(editor, text="Save figure", command=self.savefigure)
+        # save_butt.grid(row=6, column=0, pady=8)
 
-
-        self.column_dict = {'Максимальная Температура': 'tempMax', 'Минимальная Температура': 'tempMin', 'Давление': 'press',
-                       'Скорость верта': 'wind', 'Осадки': 'falls'}
+        self.column_dict = {'Максимальная Температура': 'tempMax', 'Минимальная Температура': 'tempMin',
+                            'Давление': 'press',
+                            'Скорость верта': 'wind', 'Осадки': 'falls'}
         self.column = tk.StringVar(value=list(self.column_dict.keys())[0])
-        self.column_combo = ttk.Combobox(editor, textvariable=self.column, values=list(self.column_dict.keys()), state='readonly')
+        self.column_combo = ttk.Combobox(editor, textvariable=self.column, values=list(self.column_dict.keys()),
+                                         state='readonly')
         self.column_combo.current(0)
         self.column_combo.bind('<<ComboboxSelected>>', lambda event: self.askdata(list(
-            map(lambda x: x.get(), [self.cityfilter, self.dayfilter, self.monthfilter, self.yearfilter])))) # the same as in update button. It can be removed
-        self.column_combo.grid(row=8, column=0, pady=8)
+            map(lambda x: x.get(), [self.cityfilter, self.dayfilter, self.monthfilter,
+                                    self.yearfilter]))))  # the same as in update button. It can be removed
+        self.column_combo.grid(row=7, column=0, pady=8)
         # </editor-fold>
 
         # <editor-fold desc="Graphs area">
         self.graph_area = ttk.Frame(self.root, relief=self.view, borderwidth=5, height=100, width=100)
         self.graph_area.pack(anchor='s', fill='y')
-
 
         # </editor-fold>
         self.analitics = ''
@@ -219,7 +219,7 @@ class Gui:
         self.graph.get_tk_widget().grid_forget()
         self.msge.grid(row=0, column=0)
         self.msge.config(text=self.analitics)
-        with open('../output/log.txt', 'w+') as f:
+        with open('../Output/log.txt', 'w+') as f:
             f.write(self.analitics)
 
     def savefigure(self):
@@ -227,18 +227,18 @@ class Gui:
         Сохраняет текущую диаграмму в файл
         """
         if not self.imageId:
-            files = [f for f in os.listdir('../graphics') if
-                     os.path.isfile('../graphics' + f) and not re.match(r'\d\d\d\.png', f)]
+            files = [f for f in os.listdir('../Graphics') if
+                     os.path.isfile('../Graphics' + f) and not re.match(r'\d\d\d\.png', f)]
             indx = pd.DataFrame(columns=['ID', 'city', 'minDate', 'maxDate'])
 
             if files:
                 for file in files:
-                    indx = indx.append(pd.read_csv('../graphics' + file, encoding="utf-8", sep=";"), sort=False)
+                    indx = indx.append(pd.read_csv('../Graphics' + file, encoding="utf-8", sep=";"), sort=False)
                 # print(indx)
                 self.imageId = max(indx['ID'].to_list())
             else:
                 self.imageId = 0
-        self.fig.savefig('../graphics/{0:03}.png'.format(self.imageId))
+        self.fig.savefig('../Graphics/{0:03}.png'.format(self.imageId))
 
     def load(self):
         """
@@ -303,7 +303,7 @@ class Gui:
                                      filetypes=(("csv files", ".csv"),
                                                 ("all files", ".*")),
                                      defaultextension='.csv',
-                                     initialdir="../data/")
+                                     initialdir="../Data/")
         if not re.match(r'\d{3}\.csv', route):
             self.pointer.save(route)
         else:
@@ -335,26 +335,37 @@ class Gui:
                 data = [df[city]['tempMax'].idxmax(), df[city]['tempMin'].idxmin(),
                         df[city]['press'].idxmax(),
                         df[city]['falls'].idxmax(), df[city]['wind'].idxmax()]
-                # print(data[0])
+                # print(Data[0])
                 # print(analisys[0])
-                (idx[0], analisys[0]) = ([city, data[0]], df[city].loc[data[0]]['tempMax']) if df[city].loc[data[0]]['tempMax'] > analisys[0] and df[city].loc[data[0]]['tempMax'] != -200 else (idx[0], analisys[0])
-                (idx[1], analisys[1]) = ([city, data[1]], df[city].loc[data[1]]['tempMin']) if df[city].loc[data[1]]['tempMin'] < analisys[1] and df[city].loc[data[1]]['tempMin'] != -200 else (idx[1], analisys[1])
-                (idx[2], analisys[2]) = ([city, data[2]], df[city].loc[data[2]]['press']) if df[city].loc[data[2]]['press'] > analisys[2] and df[city].loc[data[2]]['press'] != -200 else (idx[2], analisys[2])
-                (idx[3], analisys[3]) = ([city, data[3]], df[city].loc[data[3]]['falls']) if df[city].loc[data[3]]['falls'] > analisys[3] and df[city].loc[data[3]]['falls'] != -200 else (idx[3], analisys[3])
-                (idx[4], analisys[4]) = ([city, data[4]], df[city].loc[data[4]]['wind']) if df[city].loc[data[4]]['wind'] > analisys[4] and df[city].loc[data[4]]['wind'] != -200 else (idx[4], analisys[4])
+                (idx[0], analisys[0]) = ([city, data[0]], df[city].loc[data[0]]['tempMax']) if \
+                    df[city].loc[data[0]]['tempMax'] > analisys[0] and \
+                    df[city].loc[data[0]]['tempMax'] != -200 else (idx[0], analisys[0])
+                (idx[1], analisys[1]) = ([city, data[1]], df[city].loc[data[1]]['tempMin']) if \
+                    df[city].loc[data[1]]['tempMin'] < analisys[1] and \
+                    df[city].loc[data[1]]['tempMin'] != -200 else (idx[1], analisys[1])
+                (idx[2], analisys[2]) = ([city, data[2]], df[city].loc[data[2]]['press']) if \
+                    df[city].loc[data[2]]['press'] > analisys[2] and \
+                    df[city].loc[data[2]]['press'] != -200 else (idx[2], analisys[2])
+                (idx[3], analisys[3]) = ([city, data[3]], df[city].loc[data[3]]['falls']) if \
+                    df[city].loc[data[3]]['falls'] > analisys[3] and \
+                    df[city].loc[data[3]]['falls'] != -200 else (idx[3], analisys[3])
+                (idx[4], analisys[4]) = ([city, data[4]], df[city].loc[data[4]]['wind']) if \
+                    df[city].loc[data[4]]['wind'] > analisys[4] and \
+                    df[city].loc[data[4]]['wind'] != -200 else (idx[4], analisys[4])
                 # map(lambda a: [a[0], dt.date(a[1].years, a[1].months, a[1].days)], idx)
         # print(idx, analisys, sep='\n\n')
         analisys = list(zip(idx, analisys))
         datalist = []
         for x in analisys:
             # print(len(x[0]), x)
-            datalist += [x[0][0], dt.datetime.strftime(x[0][1], '%d.%m.%Y'), x[1]] if len(x[0]) != 0 else ['Недостаточно данных', 'Недостаточно данных', 'Недостаточно данных']
-            # for x in range(0, len(data) - 1, 2):
+            datalist += [x[0][0], dt.datetime.strftime(x[0][1], '%d.%m.%Y'), x[1]] if len(x[0]) != 0 else [
+                'Недостаточно данных', 'Недостаточно данных', 'Недостаточно данных']
+            # for x in range(0, len(Data) - 1, 2):
             #     print(x)
-            #     if analisys[x] < data[x]:
-            #         analisys[x] = data[x]
-            #     if analisys[x+1] > data[x+1]:
-            #         analisys[x+1] = data[x+1]
+            #     if analisys[x] < Data[x]:
+            #         analisys[x] = Data[x]
+            #     if analisys[x+1] > Data[x+1]:
+            #         analisys[x+1] = Data[x+1]
         # print(datalist)
         self.analitics = self.analitics_msg.format(*datalist)
 
@@ -371,14 +382,13 @@ class Gui:
 
         # <editor-fold desc="diagram">
         column = self.column_dict[self.column.get()]
-        graph_drawed = False
         # <editor-fold desc="BAR: All cities in one day">
-        # try:
-        if True:
+        try:
+            # if True:
             if filt[0] == 'Все' and filt[1] != 'Все' and filt[2] != 'Все' and filt[3] != 'Все':
                 # cities = df.keys()
                 values = [x.loc[filt[3] + "-" + filt[2] + "-" + filt[1]][column] for x in df.values()]
-                values = list(map(lambda x: 0 if x == -200 else x, values))
+                values = list(map(lambda t: 0 if t == -200 else t, values))
 
                 x = np.arange(len(df.keys()))
                 if self.plot:
@@ -408,13 +418,13 @@ class Gui:
 
                 x = np.arange(len(dates))
                 # print(x)
-                values = list(map(lambda x: 0 if x == -200 else x, values))
+                values = list(map(lambda t: 0 if t == -200 else t, values))
 
                 if self.plot:
                     self.fig.clf()
                 bb = self.fig.add_subplot(111)
                 self.plot = bb.plot(x, values, 'o-')
-                bb.set_title('Данные по одному месяцу в г.'+filt[0])
+                bb.set_title('Данные по одному месяцу в г.' + filt[0])
                 bb.set_xticks(x, False)
                 bb.set_xticklabels(dates, rotation='vertical')
                 self.fig.tight_layout()
@@ -427,7 +437,7 @@ class Gui:
                 dates = []
                 values = []
                 for month in range(1, 13):
-                    # print(df[filt[0]][df[filt[0]].index.month == month][data].median())
+                    # print(df[filt[0]][df[filt[0]].index.month == month][Data].median())
                     # print(df[filt[0]].index.strftime("%m.%Y"))
                     dates.append(df[filt[0]][df[filt[0]].index.month == month].index[0].strftime("%m.%Y"))
                     values.append(df[filt[0]][df[filt[0]].index.month == month].median()[column])
@@ -437,19 +447,18 @@ class Gui:
 
                 x = np.arange(len(dates))
                 # print(x)
-                values = list(map(lambda x: 0 if x == -200 else x, values))
+                values = list(map(lambda t: 0 if t == -200 else t, values))
 
                 if self.plot:
                     self.fig.clf()
                 bb = self.fig.add_subplot(111)
                 self.plot = bb.plot(x, values, 'o-')
                 # print(filt[0])
-                bb.set_title('Годовое изменение погоды в г. '+filt[0])
+                bb.set_title('Годовое изменение погоды в г. ' + filt[0])
                 bb.set_xticks(x, False)
                 bb.set_xticklabels(dates, rotation='vertical')
                 self.fig.tight_layout()
                 self.graph.draw()
-                graph_drawed = True
 
                 pass
             # </editor-fold>
@@ -464,7 +473,7 @@ class Gui:
                 date = self.pointer.get_date_list()[0][city]
                 print(list(map(lambda tt: tt[city], self.pointer.get_date_list())))
                 while self.pointer.get_date_list()[0][city] <= date <= self.pointer.get_date_list()[1][city]:
-                    # print(df[city][df[city].index.month == month][data].median())
+                    # print(df[city][df[city].index.month == month][Data].median())
                     # print(df[city].index.strftime("%m.%Y"))
                     print(df[city][(df[city].index.month == date.month) &
                                    (df[city].index.year == date.year)].index)
@@ -479,7 +488,7 @@ class Gui:
 
                 # print(dates)
                 # print(values)
-                values = list(map(lambda x: 0 if x == -200 else x, values))
+                values = list(map(lambda t: 0 if t == -200 else t, values))
 
                 # print(x)
 
@@ -488,7 +497,7 @@ class Gui:
                 bb = self.fig.add_subplot(111)
                 x = np.arange(0, len(dates), 1)
                 self.plot = bb.plot(x, values, 'o-')
-                if len(values) > 3*12:
+                if len(values) > 3 * 12:
                     x = np.arange(0, len(dates), 12)
                     dates = dates[::12]
                 bb.set_xticks(x, False)
@@ -503,12 +512,12 @@ class Gui:
                 dates = []
                 values = []
                 for city in list(df.keys()):
-                    # print(df[city][df[city].index.month == month][data].median())
+                    # print(df[city][df[city].index.month == month][Data].median())
                     # print(df[city].index.strftime("%m.%Y"))
                     dates.append(city)
                     values.append(df[city].mean()[column])
 
-                values = list(map(lambda x: 0 if x == -200 else x, values))
+                values = list(map(lambda t: 0 if t == -200 else t, values))
                 x = np.arange(len(df.keys()))
                 if self.plot:
                     self.fig.clf()
@@ -526,14 +535,14 @@ class Gui:
                     self.fig.clf()
                 self.graph.get_tk_widget().grid_forget()
                 self.msge.grid(row=0, column=0)
-        # except IndexError:
-        # except ValueError:
-        #     msg.showerror('Нет данных', "Данных по выбранным фильтрам недостаточно, чтобы построить графики")
-        #
-        #     if self.plot:
-        #         self.fig.clf()
-        #     self.graph.get_tk_widget().grid_forget()
-        #     self.msge.grid(row=0, column=0)
+        except IndexError:
+            # except ValueError:
+            msg.showerror('Нет данных', "Данных по выбранным фильтрам недостаточно, чтобы построить графики")
+
+            if self.plot:
+                self.fig.clf()
+            self.graph.get_tk_widget().grid_forget()
+            self.msge.grid(row=0, column=0)
         # </editor-fold>
 
         # example of element:
