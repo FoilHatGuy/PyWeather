@@ -166,15 +166,19 @@ class Gui:
         delete_but.grid(row=4, column=0, pady=8)
 
         savefig_but = ttk.Button(editor, text="Сохранить график", command=self.savefigure)
-        savefig_but.grid(row=6, column=0, pady=8)
+        savefig_but.grid(row=7, column=0, pady=8)
         save_butt = ttk.Button(editor, text="Save figure", command=self.savefigure)
-        save_butt.grid(row=5, column=0, pady=8)
+        save_butt.grid(row=6, column=0, pady=8)
 
-        self.column_combo = ttk.Combobox(editor, values=['tempMax', 'tempMin', 'press'], state='readonly')
+
+        self.column_dict = {'Максимальная Температура': 'tempMax', 'Минимальная Температура': 'tempMin', 'Давление': 'press',
+                       'Скорость верта': 'wind', 'Осадки': 'falls'}
+        self.column = tk.StringVar(value=list(self.column_dict.keys())[0])
+        self.column_combo = ttk.Combobox(editor, textvariable=self.column, values=list(self.column_dict.keys()), state='readonly')
         self.column_combo.current(0)
         self.column_combo.bind('<<ComboboxSelected>>', lambda event: self.askdata(list(
             map(lambda x: x.get(), [self.cityfilter, self.dayfilter, self.monthfilter, self.yearfilter])))) # the same as in update button. It can be removed
-        self.column_combo.grid(row=6, column=0, pady=8)
+        self.column_combo.grid(row=8, column=0, pady=8)
         # </editor-fold>
 
         # <editor-fold desc="Graphs area">
@@ -190,8 +194,8 @@ class Gui:
         Самый теплый город: {3}, дата: {4}, температура поднялась до {5}
         Город с наибольшим атмосферным давлением: {6}, дата: {7}, Давление: {8}
         Город с наименьшим атмосферным давлением: {9}, дата: {10}, Давление: {11}
-        Город с наибольшим количеством осадков: {12}, дата: {13}, Давление: {14}
-        Город с наименьшим количеством осадков: {15}, дата: {16}, Давление: {17}
+        Город с наибольшим количеством осадков: {12}, дата: {13}, Осадки: {14}
+        Город с наименьшим количеством осадков: {15}, дата: {16}, Осадки: {17}
         """
         self.msge = tk.Label(self.graph_area, text=self.inability_msg, justify='left')
         self.msge.grid(row=0, column=0)
@@ -213,6 +217,8 @@ class Gui:
         self.graph.get_tk_widget().grid_forget()
         self.msge.grid(row=0, column=0)
         self.msge.config(text=self.analitics)
+        with open('analisys.txt', 'w') as f:
+            f.write(self.analitics)
 
     def savefigure(self):
         """
@@ -328,27 +334,27 @@ class Gui:
                     df[city]['falls'].idxmax(), df[city]['falls'].idxmin()]
             # print(data[0])
             # print(analisys[0])
-            (idx[0], analisys[0]) = ([city, data[0]], df[city].loc[data[0]]['tempMax']) if df[city].loc[data[0]]['tempMax'] > analisys[0] else (idx[0], analisys[0])
-            (idx[1], analisys[1]) = ([city, data[1]], df[city].loc[data[1]]['tempMin']) if df[city].loc[data[1]]['tempMin'] < analisys[1] else (idx[1], analisys[1])
-            (idx[2], analisys[2]) = ([city, data[2]], df[city].loc[data[2]]['press']) if df[city].loc[data[2]]['press'] > analisys[2] else (idx[2], analisys[2])
-            (idx[3], analisys[3]) = ([city, data[3]], df[city].loc[data[3]]['press']) if df[city].loc[data[3]]['press'] < analisys[3] else (idx[3], analisys[3])
-            (idx[4], analisys[4]) = ([city, data[4]], df[city].loc[data[4]]['falls']) if df[city].loc[data[4]]['falls'] > analisys[4] else (idx[4], analisys[4])
-            (idx[5], analisys[5]) = ([city, data[5]], df[city].loc[data[5]]['falls']) if df[city].loc[data[5]]['falls'] < analisys[5] else (idx[5], analisys[5])
+            (idx[0], analisys[0]) = ([city, data[0]], df[city].loc[data[0]]['tempMax']) if df[city].loc[data[0]]['tempMax'] > analisys[0] and df[city].loc[data[0]]['tempMax'] != -200 else (idx[0], analisys[0])
+            (idx[1], analisys[1]) = ([city, data[1]], df[city].loc[data[1]]['tempMin']) if df[city].loc[data[1]]['tempMin'] < analisys[1] and df[city].loc[data[1]]['tempMin'] != -200 else (idx[1], analisys[1])
+            (idx[2], analisys[2]) = ([city, data[2]], df[city].loc[data[2]]['press']) if df[city].loc[data[2]]['press'] > analisys[2] and df[city].loc[data[2]]['press'] != -200 else (idx[2], analisys[2])
+            (idx[3], analisys[3]) = ([city, data[3]], df[city].loc[data[3]]['press']) if df[city].loc[data[3]]['press'] < analisys[3] and df[city].loc[data[3]]['press'] != -200 else (idx[3], analisys[3])
+            (idx[4], analisys[4]) = ([city, data[4]], df[city].loc[data[4]]['falls']) if df[city].loc[data[4]]['falls'] > analisys[4] and df[city].loc[data[4]]['falls'] != -200 else (idx[4], analisys[4])
+            (idx[5], analisys[5]) = ([city, data[5]], df[city].loc[data[5]]['falls']) if df[city].loc[data[5]]['falls'] < analisys[5] and df[city].loc[data[5]]['falls'] != -200 else (idx[5], analisys[5])
             # map(lambda a: [a[0], dt.date(a[1].years, a[1].months, a[1].days)], idx)
-        print(idx, analisys, sep='\n\n')
+        # print(idx, analisys, sep='\n\n')
         analisys = list(zip(idx, analisys))
         datalist = []
         for x in analisys:
-            datalist += [x[0][0], dt.datetime.strftime(x[0][1], '%d.%m.%Y'), x[1]]
+            print(len(x[0]), x)
+            datalist += [x[0][0], dt.datetime.strftime(x[0][1], '%d.%m.%Y'), x[1]] if len(x[0]) != 0 else ['Недостаточно данных', 'Недостаточно данных', 'Недостаточно данных']
             # for x in range(0, len(data) - 1, 2):
             #     print(x)
             #     if analisys[x] < data[x]:
             #         analisys[x] = data[x]
             #     if analisys[x+1] > data[x+1]:
             #         analisys[x+1] = data[x+1]
-        print(datalist)
+        # print(datalist)
         self.analitics = self.analitics_msg.format(*datalist)
-        data = 'tempMax'
         self.table.delete(*self.table.get_children())
         for city in df.keys():
             for row in df[city].to_dict('index').items():
@@ -360,12 +366,13 @@ class Gui:
         # print(filt)
 
         # <editor-fold desc="diagram">
-        column = self.column_combo.current()
+        column = self.column_dict[self.column.get()]
         graph_drawed = False
         # <editor-fold desc="BAR: All cities in one day">
         if filt[0] == 'Все' and filt[1] != 'Все' and filt[2] != 'Все' and filt[3] != 'Все':
             # cities = df.keys()
             values = [x.loc[filt[3] + "-" + filt[2] + "-" + filt[1]][column] for x in df.values()]
+            values = list(map(lambda x: 0 if x == -200 else x, values))
 
             x = np.arange(len(df.keys()))
             if self.plot:
@@ -373,6 +380,7 @@ class Gui:
             bb = self.fig.add_subplot(111)
             # print(bb)
             self.plot = bb.bar(x, values)
+            bb.set_xticks(x, False)
             bb.set_xticklabels(df.keys(), rotation='vertical')
             bb.set_title(
                 r'Погода в городах России на {0:02}.{1:02}.{2:04}'.format(int(filt[1]), int(filt[2]), int(filt[3])))
@@ -394,6 +402,7 @@ class Gui:
 
             x = np.arange(len(dates))
             # print(x)
+            values = list(map(lambda x: 0 if x == -200 else x, values))
 
             if self.plot:
                 self.fig.clf()
@@ -416,19 +425,20 @@ class Gui:
                 # print(df[filt[0]][df[filt[0]].index.month == month][data].median())
                 # print(df[filt[0]].index.strftime("%m.%Y"))
                 dates.append(df[filt[0]][df[filt[0]].index.month == month].index[0].strftime("%m.%Y"))
-                values.append(df[filt[0]][df[filt[0]].index.month == month][column].median())
+                values.append(df[filt[0]][df[filt[0]].index.month == month].median()[column])
 
             # print(dates)
             # print(values)
 
             x = np.arange(len(dates))
             # print(x)
+            values = list(map(lambda x: 0 if x == -200 else x, values))
 
             if self.plot:
                 self.fig.clf()
             bb = self.fig.add_subplot(111)
             self.plot = bb.plot(x, values, 'o-')
-            print(filt[0])
+            # print(filt[0])
             bb.set_title('Годовое изменение погоды в г. '+filt[0])
             bb.set_xticks(x, False)
             bb.set_xticklabels(dates, rotation='vertical')
@@ -453,12 +463,15 @@ class Gui:
                 # print(df[city][df[city].index.month == date.month].index[0].strftime("%m.%Y"))
                 dates.append(df[city][(df[city].index.month == date.month) &
                                       (df[city].index.year == date.year)].index[0].strftime("%m.%Y"))
+                # print(df[city][(df[city].index.month == date.month) &
+                #                        (df[city].index.year == date.year)].median()[column])
                 values.append(df[city][(df[city].index.month == date.month) &
-                                       (df[city].index.year == date.year)][column].median())
+                                       (df[city].index.year == date.year)].median()[column])
                 date += relativedelta(months=1)
 
             # print(dates)
             # print(values)
+            values = list(map(lambda x: 0 if x == -200 else x, values))
 
             x = np.arange(len(dates))
             # print(x)
@@ -482,12 +495,14 @@ class Gui:
                 # print(df[city][df[city].index.month == month][data].median())
                 # print(df[city].index.strftime("%m.%Y"))
                 dates.append(city)
-                values.append(df[city][column].mean())
+                values.append(df[city].mean()[column])
 
+            values = list(map(lambda x: 0 if x == -200 else x, values))
             x = np.arange(len(df.keys()))
             if self.plot:
                 self.fig.clf()
             bb = self.fig.add_subplot(111)
+            bb.set_xticks(x, False)
             # print(bb)
             self.plot = bb.bar(x, values)
             bb.set_xticklabels(df.keys(), rotation='vertical')
