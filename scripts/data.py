@@ -55,6 +55,9 @@ class Data:
         """
         return self.cityindex.index.to_list()
 
+    def get_date_list(self):
+        return [self.cityindex['minDate'], self.cityindex['maxDate']]
+
     def getdate(self):
         """
         Возвращает список из минимальной и максимальной дат во всей базе данных

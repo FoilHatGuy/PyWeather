@@ -110,7 +110,7 @@ class Gui:
         tableframe = ttk.Frame(top_left, relief='groove', borderwidth=2)
         tableframe.grid(row=1, column=0, columnspan=3)
 
-        self.table = ttk.Treeview(tableframe,
+        self.table = ttk.Treeview(tableframe, height=15,
                                   columns=["statName", "date", "tempMax", "tempMin", "press", "wind", "falls"])
 
         scroll = ttk.Scrollbar(tableframe, orient="vertical", command=self.table.yview)
@@ -330,23 +330,24 @@ class Gui:
         analisys = [-275, 10000, -275, 10000, -275, 10000]
         idx = [[], [], [], [], [], [], [], []]
         for city in df.keys():
-            data = [df[city]['tempMax'].idxmax(), df[city]['tempMin'].idxmin(),
-                    df[city]['press'].idxmax(), df[city]['press'].idxmin(),
-                    df[city]['falls'].idxmax(), df[city]['falls'].idxmin()]
-            # print(data[0])
-            # print(analisys[0])
-            (idx[0], analisys[0]) = ([city, data[0]], df[city].loc[data[0]]['tempMax']) if df[city].loc[data[0]]['tempMax'] > analisys[0] and df[city].loc[data[0]]['tempMax'] != -200 else (idx[0], analisys[0])
-            (idx[1], analisys[1]) = ([city, data[1]], df[city].loc[data[1]]['tempMin']) if df[city].loc[data[1]]['tempMin'] < analisys[1] and df[city].loc[data[1]]['tempMin'] != -200 else (idx[1], analisys[1])
-            (idx[2], analisys[2]) = ([city, data[2]], df[city].loc[data[2]]['press']) if df[city].loc[data[2]]['press'] > analisys[2] and df[city].loc[data[2]]['press'] != -200 else (idx[2], analisys[2])
-            (idx[3], analisys[3]) = ([city, data[3]], df[city].loc[data[3]]['press']) if df[city].loc[data[3]]['press'] < analisys[3] and df[city].loc[data[3]]['press'] != -200 else (idx[3], analisys[3])
-            (idx[4], analisys[4]) = ([city, data[4]], df[city].loc[data[4]]['falls']) if df[city].loc[data[4]]['falls'] > analisys[4] and df[city].loc[data[4]]['falls'] != -200 else (idx[4], analisys[4])
-            (idx[5], analisys[5]) = ([city, data[5]], df[city].loc[data[5]]['falls']) if df[city].loc[data[5]]['falls'] < analisys[5] and df[city].loc[data[5]]['falls'] != -200 else (idx[5], analisys[5])
-            # map(lambda a: [a[0], dt.date(a[1].years, a[1].months, a[1].days)], idx)
+            if df[city].size > 0:
+                data = [df[city]['tempMax'].idxmax(), df[city]['tempMin'].idxmin(),
+                        df[city]['press'].idxmax(), df[city]['press'].idxmin(),
+                        df[city]['falls'].idxmax(), df[city]['falls'].idxmin()]
+                # print(data[0])
+                # print(analisys[0])
+                (idx[0], analisys[0]) = ([city, data[0]], df[city].loc[data[0]]['tempMax']) if df[city].loc[data[0]]['tempMax'] > analisys[0] and df[city].loc[data[0]]['tempMax'] != -200 else (idx[0], analisys[0])
+                (idx[1], analisys[1]) = ([city, data[1]], df[city].loc[data[1]]['tempMin']) if df[city].loc[data[1]]['tempMin'] < analisys[1] and df[city].loc[data[1]]['tempMin'] != -200 else (idx[1], analisys[1])
+                (idx[2], analisys[2]) = ([city, data[2]], df[city].loc[data[2]]['press']) if df[city].loc[data[2]]['press'] > analisys[2] and df[city].loc[data[2]]['press'] != -200 else (idx[2], analisys[2])
+                (idx[3], analisys[3]) = ([city, data[3]], df[city].loc[data[3]]['press']) if df[city].loc[data[3]]['press'] < analisys[3] and df[city].loc[data[3]]['press'] != -200 else (idx[3], analisys[3])
+                (idx[4], analisys[4]) = ([city, data[4]], df[city].loc[data[4]]['falls']) if df[city].loc[data[4]]['falls'] > analisys[4] and df[city].loc[data[4]]['falls'] != -200 else (idx[4], analisys[4])
+                (idx[5], analisys[5]) = ([city, data[5]], df[city].loc[data[5]]['falls']) if df[city].loc[data[5]]['falls'] < analisys[5] and df[city].loc[data[5]]['falls'] != -200 else (idx[5], analisys[5])
+                # map(lambda a: [a[0], dt.date(a[1].years, a[1].months, a[1].days)], idx)
         # print(idx, analisys, sep='\n\n')
         analisys = list(zip(idx, analisys))
         datalist = []
         for x in analisys:
-            print(len(x[0]), x)
+            # print(len(x[0]), x)
             datalist += [x[0][0], dt.datetime.strftime(x[0][1], '%d.%m.%Y'), x[1]] if len(x[0]) != 0 else ['Недостаточно данных', 'Недостаточно данных', 'Недостаточно данных']
             # for x in range(0, len(data) - 1, 2):
             #     print(x)
@@ -358,6 +359,7 @@ class Gui:
         self.analitics = self.analitics_msg.format(*datalist)
         self.table.delete(*self.table.get_children())
         for city in df.keys():
+            # print(city)
             for row in df[city].to_dict('index').items():
                 row = list(row)
                 row[0] = dt.date(row[0].year, row[0].month, row[0].day)
@@ -370,153 +372,167 @@ class Gui:
         column = self.column_dict[self.column.get()]
         graph_drawed = False
         # <editor-fold desc="BAR: All cities in one day">
-        if filt[0] == 'Все' and filt[1] != 'Все' and filt[2] != 'Все' and filt[3] != 'Все':
-            # cities = df.keys()
-            values = [x.loc[filt[3] + "-" + filt[2] + "-" + filt[1]][column] for x in df.values()]
-            values = list(map(lambda x: 0 if x == -200 else x, values))
+        # try:
+        if True:
+            if filt[0] == 'Все' and filt[1] != 'Все' and filt[2] != 'Все' and filt[3] != 'Все':
+                # cities = df.keys()
+                values = [x.loc[filt[3] + "-" + filt[2] + "-" + filt[1]][column] for x in df.values()]
+                values = list(map(lambda x: 0 if x == -200 else x, values))
 
-            x = np.arange(len(df.keys()))
-            if self.plot:
-                self.fig.clf()
-            bb = self.fig.add_subplot(111)
-            # print(bb)
-            self.plot = bb.bar(x, values)
-            bb.set_xticks(x, False)
-            bb.set_xticklabels(df.keys(), rotation='vertical')
-            bb.set_title(
-                r'Погода в городах России на {0:02}.{1:02}.{2:04}'.format(int(filt[1]), int(filt[2]), int(filt[3])))
-            self.fig.tight_layout()
-            self.graph.draw()
-        # </editor-fold>
+                x = np.arange(len(df.keys()))
+                if self.plot:
+                    self.fig.clf()
+                bb = self.fig.add_subplot(111)
+                # print(bb)
+                self.plot = bb.bar(x, values)
+                bb.set_xticks(x, False)
+                bb.set_xticklabels(df.keys(), rotation='vertical')
+                bb.set_title(
+                    r'Погода в городах России на {0:02}.{1:02}.{2:04}'.format(int(filt[1]), int(filt[2]), int(filt[3])))
+                self.fig.tight_layout()
+                self.graph.draw()
+            # </editor-fold>
 
-        # <editor-fold desc="PLOT: One month of year in one city">
-        elif filt[0] != 'Все' and filt[1] == 'Все' and filt[2] != 'Все' and filt[3] != 'Все':
-            dates = []
-            values = []
+            # <editor-fold desc="PLOT: One month of year in one city">
+            elif filt[0] != 'Все' and filt[1] == 'Все' and filt[2] != 'Все' and filt[3] != 'Все':
+                dates = []
+                values = []
 
-            for row in df[filt[0]].iterrows():
-                dates.append(row[0].strftime("%d.%m.%Y"))
-                values.append(row[1][column])
+                for row in df[filt[0]].iterrows():
+                    dates.append(row[0].strftime("%d.%m.%Y"))
+                    values.append(row[1][column])
 
-            # print(dates)
-            # print(values)
+                # print(dates)
+                # print(values)
 
-            x = np.arange(len(dates))
-            # print(x)
-            values = list(map(lambda x: 0 if x == -200 else x, values))
+                x = np.arange(len(dates))
+                # print(x)
+                values = list(map(lambda x: 0 if x == -200 else x, values))
 
-            if self.plot:
-                self.fig.clf()
-            bb = self.fig.add_subplot(111)
-            self.plot = bb.plot(x, values, 'o-')
-            bb.set_title('Данные по одному месяцу в г.'+filt[0])
-            bb.set_xticks(x, False)
-            bb.set_xticklabels(dates, rotation='vertical')
-            self.fig.tight_layout()
-            self.graph.draw()
+                if self.plot:
+                    self.fig.clf()
+                bb = self.fig.add_subplot(111)
+                self.plot = bb.plot(x, values, 'o-')
+                bb.set_title('Данные по одному месяцу в г.'+filt[0])
+                bb.set_xticks(x, False)
+                bb.set_xticklabels(dates, rotation='vertical')
+                self.fig.tight_layout()
+                self.graph.draw()
 
-            # One month of year in one city
-        # </editor-fold>
+                # One month of year in one city
+            # </editor-fold>
+            # <editor-fold desc="PLOT: annual in one city">
+            elif filt[0] != 'Все' and filt[1] == 'Все' and filt[2] == 'Все' and filt[3] != 'Все':
+                dates = []
+                values = []
+                for month in range(1, 13):
+                    # print(df[filt[0]][df[filt[0]].index.month == month][data].median())
+                    # print(df[filt[0]].index.strftime("%m.%Y"))
+                    dates.append(df[filt[0]][df[filt[0]].index.month == month].index[0].strftime("%m.%Y"))
+                    values.append(df[filt[0]][df[filt[0]].index.month == month].median()[column])
 
-        # <editor-fold desc="PLOT: annual in one city">
-        elif filt[0] != 'Все' and filt[1] == 'Все' and filt[2] == 'Все' and filt[3] != 'Все':
-            dates = []
-            values = []
-            for month in range(1, 13):
-                # print(df[filt[0]][df[filt[0]].index.month == month][data].median())
-                # print(df[filt[0]].index.strftime("%m.%Y"))
-                dates.append(df[filt[0]][df[filt[0]].index.month == month].index[0].strftime("%m.%Y"))
-                values.append(df[filt[0]][df[filt[0]].index.month == month].median()[column])
+                # print(dates)
+                # print(values)
 
-            # print(dates)
-            # print(values)
+                x = np.arange(len(dates))
+                # print(x)
+                values = list(map(lambda x: 0 if x == -200 else x, values))
 
-            x = np.arange(len(dates))
-            # print(x)
-            values = list(map(lambda x: 0 if x == -200 else x, values))
+                if self.plot:
+                    self.fig.clf()
+                bb = self.fig.add_subplot(111)
+                self.plot = bb.plot(x, values, 'o-')
+                # print(filt[0])
+                bb.set_title('Годовое изменение погоды в г. '+filt[0])
+                bb.set_xticks(x, False)
+                bb.set_xticklabels(dates, rotation='vertical')
+                self.fig.tight_layout()
+                self.graph.draw()
+                graph_drawed = True
 
-            if self.plot:
-                self.fig.clf()
-            bb = self.fig.add_subplot(111)
-            self.plot = bb.plot(x, values, 'o-')
-            # print(filt[0])
-            bb.set_title('Годовое изменение погоды в г. '+filt[0])
-            bb.set_xticks(x, False)
-            bb.set_xticklabels(dates, rotation='vertical')
-            self.fig.tight_layout()
-            self.graph.draw()
-            graph_drawed = True
+                pass
+            # </editor-fold>
 
-            pass
-        # </editor-fold>
+            # <editor-fold desc="PLOT: temp during several years in one city">
+            elif filt[0] != 'Все' and filt[1] == 'Все' and filt[2] == 'Все' and filt[3] == 'Все':
+                city = list(df.keys())[0]
+                # print(city)
 
-        # <editor-fold desc="PLOT: temp during several years in one city">
-        elif filt[0] != 'Все' and filt[1] == 'Все' and filt[2] == 'Все' and filt[3] == 'Все':
-            city = list(df.keys())[0]
-            # print(city)
+                dates = []
+                values = []
+                date = self.pointer.get_date_list()[0][city]
+                print(list(map(lambda tt: tt[city], self.pointer.get_date_list())))
+                while self.pointer.get_date_list()[0][city] <= date <= self.pointer.get_date_list()[1][city]:
+                    # print(df[city][df[city].index.month == month][data].median())
+                    # print(df[city].index.strftime("%m.%Y"))
+                    print(df[city][(df[city].index.month == date.month) &
+                                   (df[city].index.year == date.year)].index)
+                    # print(df[city][df[city].index.month == date.month].index[0].strftime("%m.%Y"))
+                    dates.append(df[city][(df[city].index.month == date.month) &
+                                          (df[city].index.year == date.year)].index[0].strftime("%m.%Y"))
+                    # print(df[city][(df[city].index.month == date.month) &
+                    #                        (df[city].index.year == date.year)].median()[column])
+                    values.append(df[city][(df[city].index.month == date.month) &
+                                           (df[city].index.year == date.year)].median()[column])
+                    date += relativedelta(months=1)
 
-            dates = []
-            values = []
-            date = self.pointer.getdate()[0]
-            while self.pointer.getdate()[0] <= date <= self.pointer.getdate()[1]:
-                # print(df[city][df[city].index.month == month][data].median())
-                # print(df[city].index.strftime("%m.%Y"))
-                # print(df[city][df[city].index.month == date.month].index[0].strftime("%m.%Y"))
-                dates.append(df[city][(df[city].index.month == date.month) &
-                                      (df[city].index.year == date.year)].index[0].strftime("%m.%Y"))
-                # print(df[city][(df[city].index.month == date.month) &
-                #                        (df[city].index.year == date.year)].median()[column])
-                values.append(df[city][(df[city].index.month == date.month) &
-                                       (df[city].index.year == date.year)].median()[column])
-                date += relativedelta(months=1)
+                # print(dates)
+                # print(values)
+                values = list(map(lambda x: 0 if x == -200 else x, values))
 
-            # print(dates)
-            # print(values)
-            values = list(map(lambda x: 0 if x == -200 else x, values))
+                # print(x)
 
-            x = np.arange(len(dates))
-            # print(x)
+                if self.plot:
+                    self.fig.clf()
+                bb = self.fig.add_subplot(111)
+                x = np.arange(len(dates))
+                self.plot = bb.plot(x, values, 'o-')
+                if len(values) > 3*12:
+                    dates = dates[::12]
+                    x = np.arange(len(dates))
+                bb.set_xticks(x, False)
+                bb.set_xticklabels(dates, rotation='vertical')
 
-            if self.plot:
-                self.fig.clf()
-            bb = self.fig.add_subplot(111)
-            self.plot = bb.plot(x, values, 'o-')
-            bb.set_title(city)
-            bb.set_xticks(x, False)
-            bb.set_xticklabels(dates, rotation='vertical')
-            self.fig.tight_layout()
-            self.graph.draw()
-            graph_drawed = True
+                bb.set_title(city)
+                self.fig.tight_layout()
+                self.graph.draw()
 
-        # <editor-fold desc="BAR: Average monthly temp among cities">
-        elif filt[0] == 'Все' and filt[1] == 'Все' and filt[2] != 'Все' and filt[3] != 'Все':
-            dates = []
-            values = []
-            for city in list(df.keys()):
-                # print(df[city][df[city].index.month == month][data].median())
-                # print(df[city].index.strftime("%m.%Y"))
-                dates.append(city)
-                values.append(df[city].mean()[column])
+            # <editor-fold desc="BAR: Average monthly temp among cities">
+            elif filt[0] == 'Все' and filt[1] == 'Все' and filt[2] != 'Все' and filt[3] != 'Все':
+                dates = []
+                values = []
+                for city in list(df.keys()):
+                    # print(df[city][df[city].index.month == month][data].median())
+                    # print(df[city].index.strftime("%m.%Y"))
+                    dates.append(city)
+                    values.append(df[city].mean()[column])
 
-            values = list(map(lambda x: 0 if x == -200 else x, values))
-            x = np.arange(len(df.keys()))
-            if self.plot:
-                self.fig.clf()
-            bb = self.fig.add_subplot(111)
-            bb.set_xticks(x, False)
-            # print(bb)
-            self.plot = bb.bar(x, values)
-            bb.set_xticklabels(df.keys(), rotation='vertical')
-            self.fig.tight_layout()
-            self.graph.draw()
-        # </editor-fold>
+                values = list(map(lambda x: 0 if x == -200 else x, values))
+                x = np.arange(len(df.keys()))
+                if self.plot:
+                    self.fig.clf()
+                bb = self.fig.add_subplot(111)
+                bb.set_xticks(x, False)
+                # print(bb)
+                self.plot = bb.bar(x, values)
+                bb.set_xticklabels(df.keys(), rotation='vertical')
+                self.fig.tight_layout()
+                self.graph.draw()
+            # </editor-fold>
 
-        else:
-            if self.plot:
-                self.fig.clf()
-            self.graph.get_tk_widget().grid_forget()
-            self.msge.grid(row=0, column=0)
-
+            else:
+                if self.plot:
+                    self.fig.clf()
+                self.graph.get_tk_widget().grid_forget()
+                self.msge.grid(row=0, column=0)
+        # except IndexError:
+        # except ValueError:
+        #     msg.showerror('Нет данных', "Данных по выбранным фильтрам недостаточно, чтобы построить графики")
+        #
+        #     if self.plot:
+        #         self.fig.clf()
+        #     self.graph.get_tk_widget().grid_forget()
+        #     self.msge.grid(row=0, column=0)
         # </editor-fold>
 
         # example of element:

@@ -1,4 +1,4 @@
-import datetime
+import datetime as dt
 import http.client as hclient
 import os
 import re
@@ -44,7 +44,7 @@ def fix_xml(xml_string):
 
 def create_db(table_body):
     columns = ["date", "tempMax", "tempMin", "press", "wind", "falls"]
-    df = DataFrame(columns=columns)
+    # df = DataFrame(columns=columns)
     # print(str(table_body))
     # # for row in table_body:
     # #     date = row[0].text
@@ -67,14 +67,16 @@ def create_db(table_body):
     #              "press": str(press), "wind": str(wind), "falls": str(falls)}
     #
     #     df = df.append(l_row, ignore_index=True)
-    # print(list(table_body))
+    print(len(list(table_body)))
     # print(list(map(lambda x: dict(zip(columns, list(map(lambda y: -200 if y.text is None else y.text, list(x))))), table_body)))
     # print(list(map(lambda x: x.text, list(table_body[0]))))
     # print(list(table_body))
-    # print(list(map(lambda x: x.text, )))
-    df = df.append(list(
-        map(lambda x: dict(zip(columns, list(map(lambda y: -200 if y.text is None else y.text, list(list(x[:3])+list(x[4:-1])))))),
-            table_body)), ignore_index=True)
+    # print(list(map(lambda x: list(map(lambda y: y.text, x)), table_body)))
+    df = pd.DataFrame(list(
+        map(lambda x: dict(zip(columns, list(map(lambda y: -200 if y.text is None else y.text,
+                                                 list(list(x[:3])+list(x[4:-1])))))), table_body)), columns=columns)
+    # print(ddddf)
+    # print(df)
     # l_row = {"date": row[0].text, "tempMax": str(row[1].text), "tempMin": str(row[2].text),
     #          "press": str(row[4].text), "wind": str(row[5].text), "falls": str(row[6].text)}
 
@@ -83,7 +85,7 @@ def create_db(table_body):
 
 
 stations = [['325830', 'Петропавловск-Камчатский'], ['319600', 'Владивосток'], ['249590', 'Якутск'],
-            ['307100', 'Иркутск'], ['295700', 'Красноярск'], ['286980', 'Омск'], ['287220', 'Уфа'],
+            ['307100', 'Иркутск'], ['286980', 'Омск'], ['287220', 'Уфа'],  # , ['295700', 'Красноярск']
             ['349290', 'Краснодар'], ['276120', 'Москва'], ['260630', 'Санкт-Петербург'], ['225500', 'Архангельск'],
             ['221130', 'Мурманск'], ['267020', 'Калининград']]
 
@@ -98,25 +100,37 @@ if files:
     idx = max(indx['ID'].to_list())
 else:
     idx = 0
-startdate = datetime.date(2000, 1, 1)
-enddate = datetime.date(2002, 1, 1)
-delta = datetime.timedelta(days=1000)
+startdate = dt.date(2000, 1, 1)
+enddate = dt.date(2018, 12, 31)
+delta = dt.timedelta(days=1000)
 indx = DataFrame(columns=['ID', 'city', 'minDate', 'maxDate'])
 for item in stations:
     idx += 1
     df = DataFrame(columns=["date", "tempMax", "tempMin", "press", "wind", "falls"])
     print(item[1])
-    date = startdate - delta
-    while enddate - date > delta:
-        date += delta
+    date = startdate  # - delta
+    breaker = False
+    while not breaker:
         print('from:', date, 'to end:', enddate - date)
-        html = ElementTree.fromstring(fix_xml(get_weather_html(item[0], date, enddate)))
-        df = pd.concat([df, create_db(html[1][2][5][1])], ignore_index=True, sort=False)
+        html = ElementTree.fromstring(fix_xml(get_weather_html(item[0], date,
+                                                               date+delta-dt.timedelta(days=1) if date+delta-dt.timedelta(days=1) < enddate else enddate)))
+        # print(len(html[1][2][5][1]))
+        dddf = create_db(html[1][2][5][1])
+        df = pd.concat([df, dddf], ignore_index=True, sort=False)
+        prev = dt.timedelta(days=len(dddf))
+        date += min(delta, prev)
+        print(df[df.duplicated(keep=False)])
+        if date > enddate:
+            breaker = True
     # print(df['date'])
     df['date'] = pd.to_datetime(df['date'], format='%d.%m.%Y')
-    # print(df)
-    df.to_csv('../data/' + '{0:03}'.format(idx) + '.csv', sep=";", index=False, encoding='utf-8')
-
+    df.set_index('date')
+    print(df[df.duplicated(keep=False)], df[df.duplicated(keep=False)].shape)
+    df.drop_duplicates('date', keep='first', inplace=True)
+    print(df[df.duplicated(keep=False)])
+    print(df.shape)
+    df.to_csv('../data/' + '{0:03}'.format(idx) + '.csv', sep=";", index=True, encoding='utf-8')
+    # print(df[df.duplicated()])
     indx = indx.append(pd.DataFrame([[idx, item[1], min(set(df['date'])), max(set(df['date']))]], columns=['ID', 'city', 'minDate', 'maxDate']))
 
 # indx = indx.set_index('ID')
