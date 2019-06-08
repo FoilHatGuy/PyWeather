@@ -85,7 +85,7 @@ def create_db(table_body):
 
 
 stations = [['325830', 'Петропавловск-Камчатский'], ['319600', 'Владивосток'], ['249590', 'Якутск'],
-            ['307100', 'Иркутск'], ['286980', 'Омск'], ['287220', 'Уфа'],  # , ['295700', 'Красноярск']
+            ['307100', 'Иркутск'], ['286980', 'Омск'], ['287220', 'Уфа'], ['295700', 'Красноярск'],
             ['349290', 'Краснодар'], ['276120', 'Москва'], ['260630', 'Санкт-Петербург'], ['225500', 'Архангельск'],
             ['221130', 'Мурманск'], ['267020', 'Калининград']]
 
@@ -101,13 +101,13 @@ if files:
 else:
     idx = 0
 startdate = dt.date(2000, 1, 1)
-enddate = dt.date(2018, 12, 31)
-delta = dt.timedelta(days=1000)
+enddate = dt.date(2013, 12, 31)
+delta = dt.timedelta(days=9000)
 indx = DataFrame(columns=['ID', 'city', 'minDate', 'maxDate'])
 for item in stations:
     idx += 1
     df = DataFrame(columns=["date", "tempMax", "tempMin", "press", "wind", "falls"])
-    print(item[1])
+    print('\n\n', item[1])
     date = startdate  # - delta
     breaker = False
     while not breaker:
@@ -118,9 +118,11 @@ for item in stations:
         dddf = create_db(html[1][2][5][1])
         df = pd.concat([df, dddf], ignore_index=True, sort=False)
         prev = dt.timedelta(days=len(dddf))
-        date += min(delta, prev)
-        print(df[df.duplicated(keep=False)])
-        if date > enddate:
+        # date += min(delta, prev)
+        print(df[df.duplicated(keep=False)], df[df.duplicated(keep=False)].shape)
+        print(df.shape)
+        date = dt.datetime.strptime(df.loc[df.shape[0]-1]['date'], '%d.%m.%Y').date()+dt.timedelta(days=1)
+        if date >= enddate:
             breaker = True
     # print(df['date'])
     df['date'] = pd.to_datetime(df['date'], format='%d.%m.%Y')
@@ -129,7 +131,7 @@ for item in stations:
     df.drop_duplicates('date', keep='first', inplace=True)
     print(df[df.duplicated(keep=False)])
     print(df.shape)
-    df.to_csv('../data/' + '{0:03}'.format(idx) + '.csv', sep=";", index=True, encoding='utf-8')
+    df.to_csv('../data/' + '{0:03}'.format(idx) + '.csv', sep=";", index=False, encoding='utf-8')
     # print(df[df.duplicated()])
     indx = indx.append(pd.DataFrame([[idx, item[1], min(set(df['date'])), max(set(df['date']))]], columns=['ID', 'city', 'minDate', 'maxDate']))
 

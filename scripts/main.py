@@ -165,6 +165,7 @@ class Gui:
 
         savefig_but = ttk.Button(editor, text="Сохранить график", command=self.savefigure)
         savefig_but.grid(row=7, column=0, pady=8)
+
         save_butt = ttk.Button(editor, text="Save figure", command=self.savefigure)
         save_butt.grid(row=6, column=0, pady=8)
 
@@ -187,13 +188,13 @@ class Gui:
         # </editor-fold>
         self.analitics = ''
         self.inability_msg = 'Невозможно построить график'
-        self.analitics_msg = """                В данном срезе данных
+        self.analitics_msg = """                    В данном срезе данных
         Самый холодный город: {0}, дата: {1}, температура опустилась до {2}
         Самый теплый город: {3}, дата: {4}, температура поднялась до {5}
         Город с наибольшим атмосферным давлением: {6}, дата: {7}, Давление: {8}
-        Город с наименьшим атмосферным давлением: {9}, дата: {10}, Давление: {11}
-        Город с наибольшим количеством осадков: {12}, дата: {13}, Осадки: {14}
-        Город с наименьшим количеством осадков: {15}, дата: {16}, Осадки: {17}
+        Город с наибольшим количеством осадков: {9}, дата: {10}, Осадки: {11}
+        Город с сильнейшим ветром: {12}, дата: {13}, Скорость ветра: {14}
+                            Данные были соханены в log.txt
         """
         self.msge = tk.Label(self.graph_area, text=self.inability_msg, justify='left')
         self.msge.grid(row=0, column=0)
@@ -218,7 +219,7 @@ class Gui:
         self.graph.get_tk_widget().grid_forget()
         self.msge.grid(row=0, column=0)
         self.msge.config(text=self.analitics)
-        with open('analisys.txt', 'w') as f:
+        with open('../output/log.txt', 'w+') as f:
             f.write(self.analitics)
 
     def savefigure(self):
@@ -327,21 +328,20 @@ class Gui:
         self.graph.get_tk_widget().grid(row=0, column=0)
         df = self.pointer.get_data(filt)
         # print(df)
-        analisys = [-275, 10000, -275, 10000, -275, 10000]
-        idx = [[], [], [], [], [], [], [], []]
+        analisys = [-275, 10000, -275, -275, -275]
+        idx = [[], [], [], [], [], [], []]
         for city in df.keys():
             if df[city].size > 0:
                 data = [df[city]['tempMax'].idxmax(), df[city]['tempMin'].idxmin(),
-                        df[city]['press'].idxmax(), df[city]['press'].idxmin(),
-                        df[city]['falls'].idxmax(), df[city]['falls'].idxmin()]
+                        df[city]['press'].idxmax(),
+                        df[city]['falls'].idxmax(), df[city]['wind'].idxmax()]
                 # print(data[0])
                 # print(analisys[0])
                 (idx[0], analisys[0]) = ([city, data[0]], df[city].loc[data[0]]['tempMax']) if df[city].loc[data[0]]['tempMax'] > analisys[0] and df[city].loc[data[0]]['tempMax'] != -200 else (idx[0], analisys[0])
                 (idx[1], analisys[1]) = ([city, data[1]], df[city].loc[data[1]]['tempMin']) if df[city].loc[data[1]]['tempMin'] < analisys[1] and df[city].loc[data[1]]['tempMin'] != -200 else (idx[1], analisys[1])
                 (idx[2], analisys[2]) = ([city, data[2]], df[city].loc[data[2]]['press']) if df[city].loc[data[2]]['press'] > analisys[2] and df[city].loc[data[2]]['press'] != -200 else (idx[2], analisys[2])
-                (idx[3], analisys[3]) = ([city, data[3]], df[city].loc[data[3]]['press']) if df[city].loc[data[3]]['press'] < analisys[3] and df[city].loc[data[3]]['press'] != -200 else (idx[3], analisys[3])
-                (idx[4], analisys[4]) = ([city, data[4]], df[city].loc[data[4]]['falls']) if df[city].loc[data[4]]['falls'] > analisys[4] and df[city].loc[data[4]]['falls'] != -200 else (idx[4], analisys[4])
-                (idx[5], analisys[5]) = ([city, data[5]], df[city].loc[data[5]]['falls']) if df[city].loc[data[5]]['falls'] < analisys[5] and df[city].loc[data[5]]['falls'] != -200 else (idx[5], analisys[5])
+                (idx[3], analisys[3]) = ([city, data[3]], df[city].loc[data[3]]['falls']) if df[city].loc[data[3]]['falls'] > analisys[3] and df[city].loc[data[3]]['falls'] != -200 else (idx[3], analisys[3])
+                (idx[4], analisys[4]) = ([city, data[4]], df[city].loc[data[4]]['wind']) if df[city].loc[data[4]]['wind'] > analisys[4] and df[city].loc[data[4]]['wind'] != -200 else (idx[4], analisys[4])
                 # map(lambda a: [a[0], dt.date(a[1].years, a[1].months, a[1].days)], idx)
         # print(idx, analisys, sep='\n\n')
         analisys = list(zip(idx, analisys))
@@ -357,6 +357,7 @@ class Gui:
             #         analisys[x+1] = data[x+1]
         # print(datalist)
         self.analitics = self.analitics_msg.format(*datalist)
+
         self.table.delete(*self.table.get_children())
         for city in df.keys():
             # print(city)
@@ -485,11 +486,11 @@ class Gui:
                 if self.plot:
                     self.fig.clf()
                 bb = self.fig.add_subplot(111)
-                x = np.arange(len(dates))
+                x = np.arange(0, len(dates), 1)
                 self.plot = bb.plot(x, values, 'o-')
                 if len(values) > 3*12:
+                    x = np.arange(0, len(dates), 12)
                     dates = dates[::12]
-                    x = np.arange(len(dates))
                 bb.set_xticks(x, False)
                 bb.set_xticklabels(dates, rotation='vertical')
 
